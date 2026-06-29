@@ -1,1 +1,1 @@
-# RailwayTicketSalesSystem
+# RailwayTicketSaleSystem
