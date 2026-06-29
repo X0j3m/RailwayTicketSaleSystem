@@ -1,18 +1,25 @@
 name: railway_tickets_sale_system
 services:
   db:
-    image: postgres:17
-    container_name: postgres
-    hostname: postgres
-    restart: always
-    environment:
-      POSTGRES_PASSWORD: password
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    container_name: mssql_server_2025
+    hostname: mssql2025
+    restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      - MSSQL_PID=${MSSQL_PID}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mssql_data:/var/opt/mssql
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   message_broker:
     image: rabbitmq:4-management
@@ -26,9 +33,12 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - app_network
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
-  postgres_data:
+  mssql_data:
   rabbitmq_data:
 
 networks:
