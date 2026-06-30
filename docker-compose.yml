@@ -1,5 +1,46 @@
 name: railway_tickets_sale_system
+
+x-common-healthcheck: &default-healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 5
+
 services:
+  web_api:
+    image: web_api
+    container_name: web_api
+    hostname: web_api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    networks:
+      - app_network
+    depends_on:
+      message_broker:
+        condition: service_healthy
+
+  message_broker:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      <<: *default-healthcheck
+    depends_on:
+      sql_db:
+        condition: service_healthy
+      graph_db:
+        condition: service_healthy
+
   sql_db:
     image: mcr.microsoft.com/mssql/server:2025-latest
     container_name: mssql_server_2025
@@ -17,9 +58,7 @@ services:
       - app_network
     healthcheck:
       test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      <<: *default-healthcheck
 
   graph_db:
     image: neo4j:5.12.0
@@ -38,27 +77,7 @@ services:
       - app_network
     healthcheck:
       test: ["CMD-SHELL", "neo4j-admin server status || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  message_broker:
-    image: rabbitmq:4-management
-    container_name: rabbitmq
-    hostname: rabbitmq
-    restart: always
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - app_network
-    depends_on:
-      sql_db:
-        condition: service_healthy
-      graph_db:
-        condition: service_healthy
+      <<: *default-healthcheck
 
 volumes:
   mssql_data:
