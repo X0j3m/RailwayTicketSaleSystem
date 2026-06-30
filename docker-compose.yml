@@ -1,6 +1,6 @@
 name: railway_tickets_sale_system
 services:
-  db:
+  sql_db:
     image: mcr.microsoft.com/mssql/server:2025-latest
     container_name: mssql_server_2025
     hostname: mssql2025
@@ -21,6 +21,27 @@ services:
       timeout: 5s
       retries: 5
 
+  graph_db:
+    image: neo4j:5.12.0
+    container_name: neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=none
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "neo4j-admin server status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   message_broker:
     image: rabbitmq:4-management
     container_name: rabbitmq
@@ -34,11 +55,15 @@ services:
     networks:
       - app_network
     depends_on:
-      db:
+      sql_db:
+        condition: service_healthy
+      graph_db:
         condition: service_healthy
 
 volumes:
   mssql_data:
+  neo4j_data:
+  neo4j_logs:
   rabbitmq_data:
 
 networks:
