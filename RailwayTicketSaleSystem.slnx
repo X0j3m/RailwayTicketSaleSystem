@@ -1,6 +1,13 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path=".env" />
+    <File Path=".gitignore" />
     <File Path="docker-compose.yml" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/backend/">
+    <Project Path="src/backend/Contacts/Contacts.csproj" Id="4dc68ec3-f5a6-4244-9839-2e6d04a315ab" />
   </Folder>
 </Solution>
