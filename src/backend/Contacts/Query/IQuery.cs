@@ -1,4 +1,4 @@
-﻿namespace Contacts.Query
+﻿namespace Contracts.Query
 {
     public interface IQuery { }
 }

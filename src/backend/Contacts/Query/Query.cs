@@ -1,4 +1,4 @@
-﻿namespace Contacts.Query
+﻿namespace Contracts.Query
 {
     public record StationListQuery : IQuery { }
     public record TrainSeats(Guid TrainId) : IQuery { }

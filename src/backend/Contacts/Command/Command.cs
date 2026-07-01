@@ -1,4 +1,4 @@
-﻿namespace Contacts.Command
+﻿namespace Contracts.Command
 {
     public record SeatReservation
     {
