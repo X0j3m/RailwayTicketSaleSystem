@@ -54,11 +54,24 @@ services:
       - MSSQL_PID=${MSSQL_PID}
     volumes:
       - mssql_data:/var/opt/mssql
+      - ./sql/create_trains_fleet_db.sql:/usr/src/app/create_trains_fleet_db.sql
+      - ./sql/insert_trains_fleet_db_data.sql:/usr/src/app/insert_trains_fleet_db_data.sql
     networks:
       - app_network
     healthcheck:
       test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1"]
       <<: *default-healthcheck
+    entrypoint: >
+      /bin/bash -c "
+      /opt/mssql/bin/sqlservr &
+      echo 'Waiting for MSSQL to start...';
+      sleep 15;
+      echo 'Running database initialization script...';
+      /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -i /usr/src/app/create_trains_fleet_db.sql;
+      echo 'Running data insertion script...';
+      /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -i /usr/src/app/insert_trains_fleet_db_data.sql;
+      wait
+      "
 
   graph_db:
     image: neo4j:5.12.0

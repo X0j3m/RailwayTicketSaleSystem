@@ -1,6 +1,13 @@
 ﻿namespace Contracts.Query
 {
-    public record StationListQuery : IQuery { }
-    public record TrainSeats(Guid TrainId) : IQuery { }
-    public record TrainConnections(Guid StartStation, Guid EndStation) : IQuery { }
+    public record GetStationsQuery : IQuery { }
+    public record GetAvailableSeatsQuery : IQuery
+    {
+        public Guid TrainId { get; init; }
+    }
+    public record GetTrainConnectionsQuery : IQuery
+    {
+        public Guid StartStation { get; init; }
+        public Guid EndStation { get; init; }
+    }
 }
