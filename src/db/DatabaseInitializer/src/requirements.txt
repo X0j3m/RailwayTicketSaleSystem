@@ -1,1 +1,3 @@
 sqlmodel
+pyodbc
+pydantic
