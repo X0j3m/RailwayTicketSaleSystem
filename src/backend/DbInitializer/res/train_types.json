@@ -1,0 +1,14 @@
+[
+  {
+    "type": "TLK",
+    "velocity": 80
+  },
+  {
+    "type": "IC",
+    "velocity": 110
+  },
+  {
+    "type": "EIC",
+    "velocity": 140
+  }
+]
