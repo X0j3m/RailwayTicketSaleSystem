@@ -14,6 +14,7 @@ class DatabaseConnection(BaseModel):
 
 def create_database_engine(db_connection: DatabaseConnection, db_name: str, echo=True):
     params = "?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=yes"
+    "&unicode_results=True"
 
     password = urllib.parse.quote_plus(db_connection.password)
 
@@ -21,6 +22,20 @@ def create_database_engine(db_connection: DatabaseConnection, db_name: str, echo
 
     engine = create_engine(url, echo=echo)
     return engine
+
+
+def bulk_save_entities(db_connection: DatabaseConnection, db_name: str, entities: list[SQLModel]):
+    engine = create_database_engine(db_connection, db_name, echo=True)
+    with Session(engine) as session:
+        session.add_all(entities)
+        session.commit()
+
+
+def save_entity(db_connection: DatabaseConnection, db_name: str, entity: SQLModel):
+    engine = create_database_engine(db_connection, db_name, echo=True)
+    with Session(engine) as session:
+        session.add(entity)
+        session.commit()
 
 
 def drop_database(db_connection: DatabaseConnection, db_name: str):
