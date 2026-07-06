@@ -21,7 +21,7 @@ def clear_database(db_connection):
     logger = create_logger()
     logger.info(f"Clearing database {db_connection.ip}:{db_connection.port}")
     password = urllib.parse.quote_plus(db_connection.password)
-    config.database_url = f'bolt://{db_connection.user}:{password}@{db_connection.ip}:{db_connection.port}'
+    config.DATABASE_URL = f'bolt://{db_connection.user}:{password}@{db_connection.ip}:{db_connection.port}'
 
     query = "MATCH (n) DETACH DELETE n"
     db.cypher_query(query)
@@ -35,8 +35,9 @@ def clear_temp_properties():
 
 def bulk_save_entities(db_connection: DatabaseConnection, model_class: Type[StructuredNode],
                        entities: List[Any]):
+    print(f"Saving entities to database {db_connection}")   
     password = urllib.parse.quote_plus(db_connection.password)
-    config.database_url = f'bolt://{db_connection.user}:{password}@{db_connection.ip}:{db_connection.port}'
+    config.DATABASE_URL = f'bolt://{db_connection.user}:{password}@{db_connection.ip}:{db_connection.port}'
     cleaned_entities = []
     for entity in entities:
         if hasattr(entity, '__properties__'):

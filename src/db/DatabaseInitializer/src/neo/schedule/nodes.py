@@ -17,9 +17,6 @@ class TrainStation(StructuredNode):
     latitude = FloatProperty(required=True)
     longitude = FloatProperty(required=True)
 
-    # station = RelationshipFrom('Stop', 'LOCATED_AT')
-    # stops = RelationshipTo('Stop', 'HAS')
-
 
 class Stop(StructuredNode):
     stop_id = StringProperty(unique_index=True, required=True)

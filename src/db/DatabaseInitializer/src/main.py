@@ -6,14 +6,14 @@ from sql.fleet.db_insert import insert_fleet
 
 def main():
     sql_dbc = SqlDatabaseConnection(
-        ip="127.0.0.1",
+        ip="mssql2025",
         port="1433",
         password="RootP@ssword123",
     )
     insert_fleet(sql_dbc)
 
     neo4j_dbc = Neo4jDatabaseConnection(
-        ip="127.0.0.1",
+        ip="neo4j",
         port="7687"
     )
     insert_schedule(neo4j_dbc)

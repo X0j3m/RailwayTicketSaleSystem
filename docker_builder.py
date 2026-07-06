@@ -40,7 +40,8 @@ script_tags = {
 }
 
 services = {
-    "-api": ("./src/backend/WebAPI/Dockerfile", "web_api")
+    # "-api": ("./src/backend/WebAPI", "web_api"),
+    "-db_init": ("./src/db/DatabaseInitializer", "db_initializer")
 }
 
 services_to_build = 0
@@ -58,8 +59,8 @@ def run_command(command):
 
 
 def build_docker_image(service_key):
-    dockerfile, tag = services[service_key]
-    command = ["docker", "build", "-f", dockerfile, "-t", tag, "."]
+    dockerfile_path, tag = services[service_key]
+    command = ["docker", "build", "-f", dockerfile_path + "/Dockerfile", "-t", tag, dockerfile_path]
 
     print(f"{colors['blue']}Running:{colors['white']} {' '.join(command)}")
 

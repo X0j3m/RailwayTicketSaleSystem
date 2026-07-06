@@ -66,6 +66,7 @@ services:
     image: neo4j:5.12.0
     container_name: neo4j
     restart: unless-stopped
+    hostname: neo4j
     ports:
       - "7474:7474"
       - "7687:7687"
@@ -80,6 +81,19 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "neo4j-admin server status || exit 1"]
       <<: *default-healthcheck
+  
+  db_initializer:
+    image: db_initializer:latest
+    container_name: db_initializer
+    hostname: db_initializer
+    # restart: on-failure
+    depends_on:
+      sql_db:
+        condition: service_healthy
+      graph_db:
+        condition: service_healthy
+    networks:
+      - app_network
 
 volumes:
   mssql_data:

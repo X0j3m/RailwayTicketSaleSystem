@@ -91,12 +91,3 @@ def insert_schedule(db_connection: DatabaseConnection):
 
     logger.info("Clearing temporary properties")
     clear_temp_properties()
-
-
-if __name__ == "__main__":
-    dbc = DatabaseConnection(
-        ip="127.0.0.1",
-        port="1433"
-    )
-    clear_database(dbc)
-    insert_schedule(dbc)
