@@ -4,12 +4,14 @@ from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy import text
 from pydantic import BaseModel
 
+from utils.logger import create_logger
+
 
 class DatabaseConnection(BaseModel):
     ip: str
     port: str
     user: str = "sa"
-    password: str
+    password: str = ""
 
 
 def create_database_engine(db_connection: DatabaseConnection, db_name: str, echo=True):
@@ -39,6 +41,8 @@ def save_entity(db_connection: DatabaseConnection, db_name: str, entity: SQLMode
 
 
 def drop_database(db_connection: DatabaseConnection, db_name: str):
+    logger = create_logger()
+    logger.info(f"Clearing database {db_connection.ip}:{db_connection.port}")
     master_engine = create_database_engine(db_connection, "master")
 
     with master_engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
@@ -48,9 +52,12 @@ def drop_database(db_connection: DatabaseConnection, db_name: str):
             conn.execute(text(f"DROP DATABASE [{db_name}]"))
 
     master_engine.dispose()
+    logger.info(f"Database {db_connection.ip}:{db_connection.port} cleared")
 
 
 def initialize_database(db_connection: DatabaseConnection, db_name: str, models_module: str = ""):
+    logger = create_logger()
+    logger.info(f"Initializing database {db_connection.ip}:{db_connection.port}")
     if models_module != "":
         importlib.import_module(models_module)
 
@@ -66,3 +73,4 @@ def initialize_database(db_connection: DatabaseConnection, db_name: str, models_
     engine = create_database_engine(db_connection, db_name, echo=True)
     SQLModel.metadata.create_all(engine)
     engine.dispose()
+    logger.info(f"Database {db_connection.ip}:{db_connection.port} initialized")
