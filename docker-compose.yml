@@ -61,22 +61,12 @@ services:
     healthcheck:
       test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1"]
       <<: *default-healthcheck
-    entrypoint: >
-      /bin/bash -c "
-      /opt/mssql/bin/sqlservr &
-      echo 'Waiting for MSSQL to start...';
-      sleep 15;
-      echo 'Running database initialization script...';
-      /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -i /usr/src/app/create_trains_fleet_db.sql;
-      echo 'Running data insertion script...';
-      /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -i /usr/src/app/insert_trains_fleet_db_data.sql;
-      wait
-      "
 
   graph_db:
     image: neo4j:5.12.0
     container_name: neo4j
     restart: unless-stopped
+    hostname: neo4j
     ports:
       - "7474:7474"
       - "7687:7687"
@@ -91,6 +81,18 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "neo4j-admin server status || exit 1"]
       <<: *default-healthcheck
+  
+  db_initializer:
+    image: db_initializer
+    container_name: db_initializer
+    hostname: db_initializer
+    depends_on:
+      sql_db:
+        condition: service_healthy
+      graph_db:
+        condition: service_healthy
+    networks:
+      - app_network
 
 volumes:
   mssql_data:
