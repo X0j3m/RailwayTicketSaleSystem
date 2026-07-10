@@ -15,7 +15,7 @@ namespace WebAPI.QueueHandler.Recieve.Query
         public async Task Consume(ConsumeContext<AvailableSeatsQueryResponse> context)
         {
             var response = context.Message;
-            _logger.LogInformation("Received AvailableSeatsQueryResponse: {@Response}", response);
+            _logger.LogInformation($"Received AvailableSeatsQueryResponse: {response}");
             await Task.CompletedTask;
         }
     }

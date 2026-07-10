@@ -21,7 +21,7 @@ namespace WebAPI.QueueHandler.Send
             var endpoint = await _sendEndpointProvider.GetSendEndpoint(queueUri);
 
             await endpoint.Send(query);
-            _logger.LogInformation("Query of type {QueryType} sent to queue {QueueName}", typeof(T).Name, QueueNames.QueryQueue);
+            _logger.LogInformation($"Query of type {typeof(T).Name} sent to queue {QueueNames.QueryQueue}");
         }
     }
 }

@@ -13,6 +13,10 @@ Actions:
 
 Service arguments (Optional):
   -api                  Target: webapi image
+  -db_init			    Target: db_initializer image
+  -timetable            Target: timetable_service image
+  -train_fleet          Target: train_fleet_service image
+  
 
 Examples:
   python docker_builder.py --build -api       -> Builds only the webapi image
@@ -40,8 +44,10 @@ script_tags = {
 }
 
 services = {
-    # "-api": ("./src/backend/WebAPI", "web_api"),
-    "-db_init": ("./src/db/DatabaseInitializer", "db_initializer")
+    "-db_init": ("./src/db/DatabaseInitializer", "db_initializer"),
+    "-api": ("./src/backend/WebAPI", "web_api"),
+    #"-timetable": ("./src/backend/TimetableService", "timetable_service"),
+    #"-train_fleet": ("./src/backend/TrainFleetService", "train_fleet_service")
 }
 
 services_to_build = 0
@@ -60,7 +66,7 @@ def run_command(command):
 
 def build_docker_image(service_key):
     dockerfile_path, tag = services[service_key]
-    command = ["docker", "build", "-f", dockerfile_path + "/Dockerfile", "-t", tag, dockerfile_path]
+    command = ["docker", "build", "-f", dockerfile_path + "/Dockerfile", "-t", tag, "."]
 
     print(f"{colors['blue']}Running:{colors['white']} {' '.join(command)}")
 

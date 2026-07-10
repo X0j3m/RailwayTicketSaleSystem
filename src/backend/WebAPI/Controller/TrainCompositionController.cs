@@ -19,14 +19,17 @@ namespace WebAPI.Controller
 
         [HttpGet]
         [Route("{id}/available-seats")]
-        public async Task<IActionResult> GetTrainCompositions(Guid id)
+        public async Task<IActionResult> GetTrainCompositions(
+            Guid id,
+            [FromQuery] Guid startStationId,
+            [FromQuery] Guid endStationId)
         {
             string requestId = id.ToString();
             var query = new GetAvailableSeatsQuery
             {
                 TrainCompositionId = id,
-                StartStation = Guid.NewGuid(), // Replace with actual start station ID
-                EndStation = Guid.NewGuid() // Replace with actual end station ID
+                StartStation = startStationId,
+                EndStation = endStationId
             };
             _logger.LogInformation("Sending GetAvailableSeatsQuery");
             await _querySender.SendQueryAsync(query);

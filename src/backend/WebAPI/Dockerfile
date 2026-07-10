@@ -11,12 +11,13 @@ EXPOSE 8081
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /app
-COPY ["./WebAPI.csproj", "/app/WebAPI/"]
-RUN dotnet restore "./WebAPI.csproj"
+WORKDIR /src
+COPY ["src/backend/WebAPI/WebAPI.csproj", "src/backend/WebAPI/"]
+COPY ["src/backend/Contacts/Contracts.csproj", "src/backend/Contacts/"]
+RUN dotnet restore "src/backend/WebAPI/WebAPI.csproj"
 COPY . .
-WORKDIR "/app/WebAPI"
-RUN dotnet build "./WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/src/backend/WebAPI"
+RUN dotnet build "WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
