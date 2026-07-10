@@ -1,6 +1,6 @@
 ﻿using Contracts.Query;
 using Microsoft.AspNetCore.Mvc;
-using WebAPI.QueueSender;
+using WebAPI.QueueHandler.Send;
 
 namespace WebAPI.Controller
 {
@@ -18,11 +18,20 @@ namespace WebAPI.Controller
         }
 
         [HttpGet]
-        [Route("stations")]
-        public async Task<IActionResult> GetStations()
+        [Route("/connections")]
+        public async Task<IActionResult> GetTrainConnections(
+            //[FromQuery] Guid startStation,
+            //[FromQuery] Guid endStation,
+            //[FromQuery] DateTimeOffset departureTime
+            )
         {
-            var query = new GetStationsQuery();
-            _logger.LogInformation("Sending GetStationsQuery");
+            var query = new GetTrainConnectionsQuery
+            {
+                StartStation = Guid.NewGuid(), // Replace with actual start station ID
+                EndStation = Guid.NewGuid(), // Replace with actual end station ID
+                DepartureTime = DateTime.UtcNow.AddDays(1) // Replace with actual departure time
+            };
+            _logger.LogInformation("Sending GetTrainConnectionsQuery");
             await _querySender.SendQueryAsync(query);
             return Accepted();
         }

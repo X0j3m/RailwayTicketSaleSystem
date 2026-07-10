@@ -1,4 +1,6 @@
-﻿namespace Contracts.Command
+﻿using Contracts.Command.Abstraction;
+
+namespace Contracts.Command
 {
     public record SeatReservation
     {

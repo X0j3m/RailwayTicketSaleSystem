@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-TimetableService-4b8d8b0b-de37-4672-b73b-aa477393c5f5</UserSecretsId>
+    <UserSecretsId>dotnet-TrainFleetService-d7440517-fd72-43a2-ab4c-c71ea1f03ad6</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..\..</DockerfileContext>
   </PropertyGroup>

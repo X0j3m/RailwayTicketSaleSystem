@@ -1,6 +1,7 @@
 using MassTransit;
-using WebAPI.QueueHandler;
-using WebAPI.QueueSender;
+using Scalar.AspNetCore;
+using WebAPI.QueueHandler.Recieve.Query;
+using WebAPI.QueueHandler.Send;
 
 Console.WriteLine("Starting WebAPI");
 Thread.Sleep(5000);
@@ -15,7 +16,9 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<ResponseConsumer>();
+    x.AddConsumer<StationsQueryResponseConsumer>();
+    x.AddConsumer<TrainConnectionsQueryResponseConsumer>();
+    x.AddConsumer<AvailableSeatsQueryResponseConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -40,6 +43,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();

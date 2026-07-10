@@ -9,7 +9,9 @@
   <Folder Name="/src/" />
   <Folder Name="/src/backend/">
     <Project Path="src/backend/Contacts/Contracts.csproj" Id="4dc68ec3-f5a6-4244-9839-2e6d04a315ab" />
+    <Project Path="src/backend/Models/Models.csproj" Id="2b88b25e-e5a0-4d16-9089-2bcd37d05883" />
     <Project Path="src/backend/TimetableService/TimetableService.csproj" Id="e38cb221-4ac3-4cae-a4d8-669631355bdc" />
+    <Project Path="src/backend/TrainFleetService/TrainFleetService.csproj" Id="c8b6a5fe-d11d-48c8-9ceb-08a1cb154055" />
     <Project Path="src/backend/WebAPI/WebAPI.csproj" />
   </Folder>
 </Solution>

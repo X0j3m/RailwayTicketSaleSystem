@@ -1,4 +1,4 @@
-﻿namespace Contracts.Query
+﻿namespace Contracts.Query.Abstraction
 {
     public interface IQueryResponse { }
 }

@@ -1,14 +1,17 @@
+
 using Contracts;
 using MassTransit;
-using TimetableService.QueueHandler;
+using TrainFleetService.QueueHandler;
 
-Console.WriteLine("Starting TimetableService");
+Console.WriteLine("Starting TrainFleetService");
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddScoped<GetTrainConnectionsQueryConsumer>();
+builder.Services.AddScoped<GetAvailableSeatsQueryConsumer>();
+builder.Services.AddScoped<GetStationsQueryConsumer>();
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<GetTrainConnectionsQueryConsumer>();
+    x.AddConsumer<GetAvailableSeatsQueryConsumer>();
+    x.AddConsumer<GetStationsQueryConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -26,7 +29,8 @@ builder.Services.AddMassTransit(x =>
         cfg.ReceiveEndpoint(queueName, e =>
         {
             e.ConfigureConsumeTopology = false;
-            e.ConfigureConsumer<GetTrainConnectionsQueryConsumer>(context);
+            e.ConfigureConsumer<GetAvailableSeatsQueryConsumer>(context);
+            e.ConfigureConsumer<GetStationsQueryConsumer>(context);
         });
     });
 });
