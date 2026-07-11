@@ -1,4 +1,4 @@
-﻿using Contracts.Query;
+﻿using Contracts.Messages.Query;
 using MassTransit;
 
 namespace WebAPI.QueueHandler.Recieve.Query

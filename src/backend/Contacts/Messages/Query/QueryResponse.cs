@@ -1,7 +1,7 @@
-﻿using Contracts.Query.Abstraction;
+﻿using Contracts.Messages.Query.Abstraction;
 using Models.Dto;
 
-namespace Contracts.Query
+namespace Contracts.Messages.Query
 {
     public record StationsQueryResponse : IQueryResponse
     {

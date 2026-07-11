@@ -71,6 +71,19 @@ def initialize_database(db_connection: DatabaseConnection, db_name: str, models_
     master_engine.dispose()
 
     engine = create_database_engine(db_connection, db_name, echo=True)
-    SQLModel.metadata.create_all(engine)
+
+    if models_module != "":
+        tables_to_create = []
+        for table_obj in SQLModel.metadata.tables.values():
+            for cls in SQLModel.__subclasses__():
+                if hasattr(cls, "__table__") and cls.__table__ == table_obj:
+                    if cls.__module__.startswith(models_module):
+                        tables_to_create.append(table_obj)
+                    break
+
+        SQLModel.metadata.create_all(engine, tables=tables_to_create)
+    else:
+        SQLModel.metadata.create_all(engine)
+
     engine.dispose()
     logger.info(f"Database {db_connection.ip}:{db_connection.port} initialized")

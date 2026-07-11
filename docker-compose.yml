@@ -54,8 +54,6 @@ services:
       - MSSQL_PID=${MSSQL_PID}
     volumes:
       - mssql_data:/var/opt/mssql
-      - ./sql/create_trains_fleet_db.sql:/usr/src/app/create_trains_fleet_db.sql
-      - ./sql/insert_trains_fleet_db_data.sql:/usr/src/app/insert_trains_fleet_db_data.sql
     networks:
       - app_network
     healthcheck:

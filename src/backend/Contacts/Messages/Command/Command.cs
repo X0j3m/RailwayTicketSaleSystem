@@ -1,6 +1,6 @@
-﻿using Contracts.Command.Abstraction;
+﻿using Contracts.Messages.Command.Abstraction;
 
-namespace Contracts.Command
+namespace Contracts.Messages.Command
 {
     public record SeatReservation
     {
@@ -11,6 +11,6 @@ namespace Contracts.Command
         public Guid ToStationId { get; init; }
     }
 
-    public record Reservation(SeatReservation[] SeatReservations) : ICommand { }
-    public record CancelReservation(Guid ReservationId) : ICommand { }
+    public record ReservationCommand(SeatReservation[] SeatReservations) : ICommand { }
+    public record CancelReservationCommand(Guid ReservationId) : ICommand { }
 }

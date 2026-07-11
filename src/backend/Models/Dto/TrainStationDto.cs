@@ -3,8 +3,8 @@
     public record TrainStationDto
     {
         public Guid id { get; init; }
-        public string city { get; init; }
-        public string name { get; init; }
+        public string city { get; init; } = string.Empty;
+        public string name { get; init; } = string.Empty;
         public double latitude { get; init; }
         public double longitude { get; init; }
     }

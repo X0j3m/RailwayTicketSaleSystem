@@ -1,6 +1,6 @@
 using MassTransit;
-using Contracts.Query;
 using Models.Dto;
+using Contracts.Messages.Query;
 
 namespace TrainFleetService.QueueHandler
 {

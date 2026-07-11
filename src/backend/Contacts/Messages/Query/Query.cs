@@ -1,6 +1,6 @@
-﻿using Contracts.Query.Abstraction;
+﻿using Contracts.Messages.Query.Abstraction;
 
-namespace Contracts.Query
+namespace Contracts.Messages.Query
 {
     public record GetStationsQuery : IQuery;
     public record GetAvailableSeatsQuery : IQuery

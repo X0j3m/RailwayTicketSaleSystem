@@ -16,6 +16,7 @@ Service arguments (Optional):
   -db_init			    Target: db_initializer image
   -timetable            Target: timetable_service image
   -train_fleet          Target: train_fleet_service image
+  -reservation		    Target: reservation_service image
   
 
 Examples:
@@ -46,8 +47,9 @@ script_tags = {
 services = {
     "-db_init": ("./src/db/DatabaseInitializer", "db_initializer"),
     "-api": ("./src/backend/WebAPI", "web_api"),
-    #"-timetable": ("./src/backend/TimetableService", "timetable_service"),
-    #"-train_fleet": ("./src/backend/TrainFleetService", "train_fleet_service")
+    "-timetable": ("./src/backend/TimetableService", "timetable_service"),
+    "-train_fleet": ("./src/backend/TrainFleetService", "train_fleet_service"),
+    "-reservation": ("./src/backend/ReservationService", "reservation_service")
 }
 
 services_to_build = 0

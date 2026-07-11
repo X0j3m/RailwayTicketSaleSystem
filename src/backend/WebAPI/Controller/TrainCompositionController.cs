@@ -1,4 +1,4 @@
-﻿using Contracts.Query;
+﻿using Contracts.Messages.Query;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.QueueHandler.Send;
 
