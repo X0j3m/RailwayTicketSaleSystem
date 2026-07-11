@@ -22,8 +22,4 @@
     <ProjectReference Include="..\Contacts\Contracts.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Messaging\Consumer\Command\" />
-  </ItemGroup>
-
 </Project>

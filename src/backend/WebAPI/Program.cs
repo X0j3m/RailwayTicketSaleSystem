@@ -1,5 +1,6 @@
 using MassTransit;
 using Scalar.AspNetCore;
+using WebAPI.Messaging.Consumer.Command;
 using WebAPI.QueueHandler.Recieve.Query;
 using WebAPI.QueueHandler.Send;
 
@@ -19,6 +20,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<StationsQueryResponseConsumer>();
     x.AddConsumer<TrainConnectionsQueryResponseConsumer>();
     x.AddConsumer<AvailableSeatsQueryResponseConsumer>();
+    x.AddConsumer<CommandResponseConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {

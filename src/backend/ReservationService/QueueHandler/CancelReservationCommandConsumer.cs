@@ -18,6 +18,11 @@ namespace ReservationsService.QueueHandler
         {
             var message = context.Message;
             _logger.LogInformation($"Received CancelReservationCommand: ReservationId = {message.ReservationId}");
+
+            await Task.Delay(3000);
+
+            await _endpoint.Publish(new CommandResponse());
+            _logger.LogInformation($"Published response for query: {message.GetType().Name}");
         }
     }
 }
