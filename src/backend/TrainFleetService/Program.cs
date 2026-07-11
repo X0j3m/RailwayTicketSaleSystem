@@ -1,13 +1,22 @@
 
 using Contracts;
 using MassTransit;
+using Microsoft.Data.SqlClient;
+using System.Data;
 using TrainFleetService.QueueHandler;
+using TrainFleetService.Service;
 
 Console.WriteLine("Starting TrainFleetService");
 
 var builder = Host.CreateApplicationBuilder(args);
+
+var connectionString = builder.Configuration.GetConnectionString("MicrosoftSQLServer") ?? throw new ArgumentNullException("MicrosoftSQLServer");
+
+builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
 builder.Services.AddScoped<GetAvailableSeatsQueryConsumer>();
 builder.Services.AddScoped<GetStationsQueryConsumer>();
+builder.Services.AddScoped<FleetService>();
+
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<GetAvailableSeatsQueryConsumer>();
