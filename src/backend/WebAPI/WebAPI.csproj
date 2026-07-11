@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="QueueHandler\Recieve\Command\" />
+    <Folder Include="Messaging\Consumer\Command\" />
   </ItemGroup>
 
 </Project>
