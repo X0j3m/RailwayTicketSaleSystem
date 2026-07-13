@@ -3,11 +3,11 @@ from neomodel import StructuredNode, StringProperty, IntegerProperty, Relationsh
 
 
 class LeadsToRel(StructuredRel):
-    duration = IntegerProperty(required=True)
+    time = IntegerProperty(required=True)
 
 
 class TransferRel(StructuredRel):
-    waiting_time = IntegerProperty(required=True)
+    time = IntegerProperty(required=True)
 
 
 class TrainStation(StructuredNode):

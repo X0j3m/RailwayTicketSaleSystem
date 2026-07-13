@@ -21,7 +21,7 @@ COPY /src/db/DatabaseInitializer/src/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY /src/db/DatabaseInitializer/src/ ./src/
-COPY /src/db/DatabaseInitializer/res/ ./res/
+# COPY /src/db/DatabaseInitializer/res/ ./res/
 
 RUN useradd -m appuser && chown -R appuser /app
 USER appuser

@@ -86,6 +86,8 @@ services:
     image: db_initializer
     container_name: db_initializer
     hostname: db_initializer
+    volumes:
+      - ./src/db/DatabaseInitializer/res:/app/res
     depends_on:
       sql_db:
         condition: service_healthy

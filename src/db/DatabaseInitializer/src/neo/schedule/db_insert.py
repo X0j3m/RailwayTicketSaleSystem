@@ -58,11 +58,13 @@ def insert_schedule(db_connection: DatabaseConnection):
     MATCH (station:TrainStation {station_id: row.station_id})
     MERGE (stop)-[:LOCATED_AT]->(station)
     """
+    # MERGE (station)-[:HAS]->(stop)
+    # """
     logger.info("Inserting LOCATED_AT relations")
     create_relations(query, located_at_relations)
 
     leads_to_relations = [
-        {"from_id": lead.from_stop_id, "to_id": lead.to_stop_id, "duration": lead.duration}
+        {"from_id": lead.from_stop_id, "to_id": lead.to_stop_id, "time": lead.time}
         for lead in leads_to
     ]
     query = """
@@ -70,13 +72,13 @@ def insert_schedule(db_connection: DatabaseConnection):
     MATCH (stop1:Stop {stop_id: row.from_id})
     MATCH (stop2:Stop {stop_id: row.to_id})
     MERGE (stop1)-[r:LEADS_TO]->(stop2)
-    SET r.duration = row.duration
+    SET r.time = row.time
     """
     logger.info("Inserting LEADS_TO relations")
     create_relations(query, leads_to_relations)
 
     transfers_relations = [
-        {"from_id": transfer.from_stop_id, "to_id": transfer.to_stop_id, "waiting_time": transfer.waiting_time}
+        {"from_id": transfer.from_stop_id, "to_id": transfer.to_stop_id, "time": transfer.time}
         for transfer in transfers
     ]
     transfers_query = """
@@ -84,10 +86,10 @@ def insert_schedule(db_connection: DatabaseConnection):
         MATCH (stop1:Stop {stop_id: row.from_id})
         MATCH (stop2:Stop {stop_id: row.to_id})
         MERGE (stop1)-[r:TRANSFER]->(stop2)
-        SET r.waiting_time = row.waiting_time
+        SET r.time = row.time
         """
     logger.info("Inserting TRANSFER relations")
     create_relations(transfers_query, transfers_relations)
-
-    logger.info("Clearing temporary properties")
-    clear_temp_properties()
+    
+    # logger.info("Clearing temporary properties")
+    # clear_temp_properties()
