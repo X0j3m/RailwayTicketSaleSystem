@@ -1,7 +1,7 @@
 ﻿using Contracts.Messages.Query;
 using MassTransit;
 
-namespace WebAPI.QueueHandler.Recieve.Query
+namespace WebAPI.Messaging.Consumer.Query
 {
     public class TrainConnectionsQueryResponseConsumer : IConsumer<TrainConnectionsQueryResponse>
     {

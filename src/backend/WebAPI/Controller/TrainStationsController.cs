@@ -1,6 +1,6 @@
 ﻿using Contracts.Messages.Query;
 using Microsoft.AspNetCore.Mvc;
-using WebAPI.QueueHandler.Send;
+using WebAPI.Messaging.Sender;
 
 namespace WebAPI.Controller
 {

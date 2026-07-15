@@ -16,4 +16,10 @@
     <Project Path="src/backend/TrainFleetService/TrainFleetService.csproj" Id="c8b6a5fe-d11d-48c8-9ceb-08a1cb154055" />
     <Project Path="src/backend/WebAPI/WebAPI.csproj" />
   </Folder>
+  <Folder Name="/src/frontend/">
+    <Project Path="src/frontend/FrontendService/frontendservice.esproj">
+      <Build />
+      <Deploy />
+    </Project>
+  </Folder>
 </Solution>

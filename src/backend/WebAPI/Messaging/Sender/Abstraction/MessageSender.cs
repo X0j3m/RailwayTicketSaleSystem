@@ -1,7 +1,8 @@
 ﻿using Contracts.Messages;
 using MassTransit;
+using WebAPI.Messaging.Sender;
 
-namespace WebAPI.QueueHandler.Send.Abstraction
+namespace WebAPI.Messaging.Sender.Abstraction
 {
     public abstract class MessageSender
     {

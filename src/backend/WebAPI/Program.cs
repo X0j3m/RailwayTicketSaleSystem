@@ -1,8 +1,9 @@
 using MassTransit;
 using Scalar.AspNetCore;
+using WebAPI.Hub;
 using WebAPI.Messaging.Consumer.Command;
-using WebAPI.QueueHandler.Recieve.Query;
-using WebAPI.QueueHandler.Send;
+using WebAPI.Messaging.Consumer.Query;
+using WebAPI.Messaging.Sender;
 
 Console.WriteLine("Starting WebAPI");
 Thread.Sleep(5000);
@@ -10,10 +11,26 @@ Thread.Sleep(5000);
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddSignalR();
+
+builder.Services.AddCors(options =>
+{
+    var uri = builder.Configuration.GetValue<string>("Frontend:Uri") ?? throw new ArgumentNullException("Frontend:Uri");
+
+    options.AddPolicy("SignalRPolicy",
+        policy =>
+        {
+            policy.WithOrigins(uri)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
+});
+
 
 builder.Services.AddMassTransit(x =>
 {
@@ -42,19 +59,18 @@ builder.Services.AddScoped<CommandSender>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-//if (app.Environment.IsDevelopment())
-//{
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-//}
-
-app.UseHttpsRedirection();
-
+app.UseCors("SignalRPolicy");
+app.UseRouting();
 app.UseAuthorization();
 
+app.MapHub<FrontendHub>("/hub/frontendHub"); 
 app.MapControllers();
 
-app.MapGet("/", () => "WebAPI is running properly");
+app.MapOpenApi();
+app.MapScalarApiReference();
+
+//app.UseHttpsRedirection();
+
+//app.MapGet("/", () => "WebAPI is running properly");
 
 app.Run();
