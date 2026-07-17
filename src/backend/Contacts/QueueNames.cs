@@ -2,7 +2,9 @@
 {
     public class QueueNames
     {
-        public const string CommandQueue = "command-queue";
-        public const string QueryQueue = "query-queue";
+        public const string TrainFleetServiceQueue = "train-fleet-queue";
+        public const string TimetableServiceQueue = "timetable-queue";
+        public const string ReservationServiceQueue = "reservation-queue";
+
     }
 }

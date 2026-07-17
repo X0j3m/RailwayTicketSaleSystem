@@ -13,6 +13,7 @@ services:
   #   restart: unless-stopped
   #   environment:
   #     - RabbitMQ__Uri=rabbitmq://rabbitmq
+  #     - ASPNETCORE_ENVIRONMENT=Development
   #   ports:
   #     - "5003:8080"
   #     - "8081:8081"

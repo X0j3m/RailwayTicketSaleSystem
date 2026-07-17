@@ -13,8 +13,6 @@ var builder = Host.CreateApplicationBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("MicrosoftSQLServer") ?? throw new ArgumentNullException("MicrosoftSQLServer");
 
 builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
-builder.Services.AddScoped<GetAvailableSeatsQueryConsumer>();
-builder.Services.AddScoped<GetStationsQueryConsumer>();
 builder.Services.AddScoped<FleetService>();
 
 builder.Services.AddMassTransit(x =>
@@ -34,10 +32,10 @@ builder.Services.AddMassTransit(x =>
             h.Password(password);
         });
 
-        var queueName = QueueNames.QueryQueue;
+        var queueName = QueueNames.TrainFleetServiceQueue;
         cfg.ReceiveEndpoint(queueName, e =>
         {
-            e.ConfigureConsumeTopology = false;
+            e.ConfigureConsumeTopology = true;
             e.ConfigureConsumer<GetAvailableSeatsQueryConsumer>(context);
             e.ConfigureConsumer<GetStationsQueryConsumer>(context);
         });

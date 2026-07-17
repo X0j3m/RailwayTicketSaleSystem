@@ -1,9 +1,9 @@
 using MassTransit;
 using Scalar.AspNetCore;
-using WebAPI.Hub;
-using WebAPI.Messaging.Consumer.Command;
-using WebAPI.Messaging.Consumer.Query;
-using WebAPI.Messaging.Sender;
+using WebAPI.Hubs;
+using WebAPI.Messaging.Consumers.Command;
+using WebAPI.Messaging.Consumers.Query;
+using WebAPI.Messaging.Senders;
 
 Console.WriteLine("Starting WebAPI");
 Thread.Sleep(5000);
@@ -57,17 +57,23 @@ builder.Services.AddMassTransit(x =>
 builder.Services.AddScoped<QuerySender>();
 builder.Services.AddScoped<CommandSender>();
 
+builder.Services.AddScoped<FrontendMessageDispatcher>();
+
 var app = builder.Build();
 
 app.UseCors("SignalRPolicy");
 app.UseRouting();
 app.UseAuthorization();
 
-app.MapHub<FrontendHub>("/hub/frontendHub"); 
+app.MapHub<QueryHub>("/hub/query");
+app.MapHub<CommandHub>("/hub/command");
 app.MapControllers();
 
-app.MapOpenApi();
-app.MapScalarApiReference();
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
 //app.UseHttpsRedirection();
 

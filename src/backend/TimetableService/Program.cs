@@ -22,7 +22,7 @@ builder.Services.AddMassTransit(x =>
             h.Password(password);
         });
 
-        var queueName = QueueNames.QueryQueue;
+        var queueName = QueueNames.TimetableServiceQueue;
         cfg.ReceiveEndpoint(queueName, e =>
         {
             e.ConfigureConsumeTopology = false;

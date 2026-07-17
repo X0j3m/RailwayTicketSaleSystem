@@ -24,7 +24,7 @@ builder.Services.AddMassTransit(x =>
             h.Password(password);
         });
 
-        var queueName = QueueNames.CommandQueue;
+        var queueName = QueueNames.ReservationServiceQueue;
         cfg.ReceiveEndpoint(queueName, e =>
         {
             e.ConfigureConsumeTopology = false;

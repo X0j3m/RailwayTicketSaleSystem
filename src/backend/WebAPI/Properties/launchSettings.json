@@ -6,7 +6,6 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "launchBrowser": true,
       "applicationUrl": "http://localhost:5003",
       "launchUrl": "scalar/v1"
     },
@@ -16,7 +15,6 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      //"launchBrowser": true,
       "applicationUrl": "https://localhost:7105;http://localhost:5003"
     },
     "Container (Dockerfile)": {
