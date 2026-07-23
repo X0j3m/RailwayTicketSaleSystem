@@ -26,6 +26,7 @@ class Stop(StructuredNode):
     departure_time_minutes = IntegerProperty()
     departure_time = StringProperty()
     station_id = StringProperty()
+    train_composition_id = StringProperty()
 
     station = RelationshipTo('TrainStation', 'LOCATED_AT')
 

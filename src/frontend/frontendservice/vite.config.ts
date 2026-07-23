@@ -6,5 +6,11 @@ export default defineConfig({
     plugins: [plugin()],
     server: {
         port: 3000,
+    },
+    css: {
+        devSourcemap: true
+    },
+    build: {
+        sourcemap: true
     }
 })

@@ -1,9 +1,6 @@
 ﻿using Contracts.Messages.Backend.Query;
 using Contracts.Messages.Frontend;
 using MassTransit;
-using Microsoft.AspNetCore.SignalR;
-using Models.Abstraction;
-using Models.Dto;
 using WebAPI.Hubs;
 
 namespace WebAPI.Messaging.Consumers.Query

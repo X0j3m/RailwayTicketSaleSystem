@@ -44,6 +44,7 @@ def insert_schedule(db_connection: DatabaseConnection):
         departure_time_minutes=stop.departure_time_minutes,
         departure_time=add_minutes(stop.start_station_time, stop.departure_time_minutes),
         station_id=stop.station_id,
+        train_composition_id=stop.train_composition_id
     ) for stop in stops]
     logger.info("Inserting stops")
     stops = bulk_save_entities(db_connection, Stop, stops)

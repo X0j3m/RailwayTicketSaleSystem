@@ -27,7 +27,6 @@ export function useTrainStations() {
 
         connection.on("ReceiveStationsQueryResponse", handleReceiveStations);
 
-        // Wysyłamy żądanie tylko wtedy, gdy połączenie jest już aktywne
         if (connection.state === "Connected") {
             connection.send("getAllStations")
                 .catch(err => console.error("Error sending getAllStations: ", err));
@@ -38,5 +37,7 @@ export function useTrainStations() {
         };
     }, [connection, connection?.state]);
 
-    return trainStations;
+    return trainStations.sort((a,b) =>
+        a.name.localeCompare(b.name)
+    );
 }

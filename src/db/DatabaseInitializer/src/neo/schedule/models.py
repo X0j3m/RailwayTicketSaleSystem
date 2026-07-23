@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from sql.fleet.models import StationModel
 
 
 class StopModel(BaseModel):
@@ -8,6 +7,7 @@ class StopModel(BaseModel):
     arrival_time_minutes: int | None = None
     departure_time_minutes: int | None = None
     station_id: str | None = None
+    train_composition_id: str | None = None
 
 
 class LeadsToRelationModel(BaseModel):

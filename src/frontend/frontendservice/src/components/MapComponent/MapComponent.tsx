@@ -20,10 +20,8 @@ L.Icon.Default.mergeOptions({
 });
 
 
-export function MapComponent() {
+function MapComponent() {
     const trainStations = useTrainStations();
-
-    console.log("Aktualny stan stacji w komponencie:", trainStations);
 
     return (
         <MapContainer
@@ -49,3 +47,5 @@ export function MapComponent() {
         </MapContainer>
     );
 }
+
+export default MapComponent

@@ -6,22 +6,22 @@ x-common-healthcheck: &default-healthcheck
   retries: 5
 
 services:
-  # web_api:
-  #   image: web_api
-  #   container_name: web_api
-  #   hostname: web_api
-  #   restart: unless-stopped
-  #   environment:
-  #     - RabbitMQ__Uri=rabbitmq://rabbitmq
-  #     - ASPNETCORE_ENVIRONMENT=Development
-  #   ports:
-  #     - "5003:8080"
-  #     - "8081:8081"
-  #   networks:
-  #     - app_network
-  #   depends_on:
-  #     message_broker:
-  #       condition: service_healthy
+  web_api:
+    image: web_api
+    container_name: web_api
+    hostname: web_api
+    restart: unless-stopped
+    environment:
+      - RabbitMQ__Uri=rabbitmq://rabbitmq
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "5003:8080"
+      - "8081:8081"
+    networks:
+      - app_network
+    depends_on:
+      message_broker:
+        condition: service_healthy
 
   message_broker:
     image: rabbitmq:4-management
