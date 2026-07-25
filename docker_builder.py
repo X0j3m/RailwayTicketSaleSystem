@@ -12,6 +12,7 @@ Actions:
   -rd, --run_detached   Runs whole composition of containers at the end (detached)
 
 Service arguments (Optional):
+  -ui                   Target: frontend image
   -api                  Target: webapi image
   -db_init			    Target: db_initializer image
   -timetable            Target: timetable_service image
@@ -46,6 +47,7 @@ script_tags = {
 
 services = {
     "-db_init": ("./src/db/DatabaseInitializer", "db_initializer"),
+    "-ui": ("./src/frontend/frontendservice", "frontend"),
     "-api": ("./src/backend/WebAPI", "web_api"),
     "-timetable": ("./src/backend/TimetableService", "timetable_service"),
     "-train_fleet": ("./src/backend/TrainFleetService", "train_fleet_service"),
@@ -68,7 +70,7 @@ def run_command(command):
 
 def build_docker_image(service_key):
     dockerfile_path, tag = services[service_key]
-    command = ["docker", "build", "-f", dockerfile_path + "/Dockerfile", "-t", tag, "."]
+    command = ["docker", "build", "--no-cache", "-f", dockerfile_path + "/Dockerfile", "-t", tag, "."]
 
     print(f"{colors['blue']}Running:{colors['white']} {' '.join(command)}")
 

@@ -3,8 +3,8 @@ import {HubConnection, HubConnectionBuilder} from '@microsoft/signalr';
 import {SignalRContext} from './SignalRContext';
 
 export const SignalRProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
-    const apiUrl = import.meta.env.VITE_WEB_API_URL;
-    const queryHub = import.meta.env.VITE_QUERY_HUB;
+    const apiUrl = "http://localhost:5003";
+    const queryHub = "/hub/query";
 
     const [connection, setConnection] = useState<HubConnection | null>(null);
     const [isConnected, setIsConnected] = useState(false);
