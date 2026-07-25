@@ -4,7 +4,7 @@ import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import TrainStationMarkerComponent from "../TrainStationMarkerComponent/TrainStationMarkerComponent.tsx";
+import TrainStationMarker from "../TrainStationMarker/TrainStationMarker.tsx";
 import {useTrainStations} from "../../utils/UseTrainStations.ts";
 
 const mapCenter: [number, number] = [52.0689, 19.4797];
@@ -39,7 +39,7 @@ function MapComponent() {
             />
 
             {trainStations && trainStations.map((station) => (
-                <TrainStationMarkerComponent
+                <TrainStationMarker
                     key={station.id}
                     station={station}
                 />

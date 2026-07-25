@@ -7,6 +7,9 @@ using TimetableService.Services;
 Console.WriteLine("Starting TimetableService");
 
 var builder = Host.CreateApplicationBuilder(args);
+
+builder.Services.AddHealthChecks();
+
 builder.Services.AddScoped<GetTrainConnectionsQueryConsumer>();
 builder.Services.AddScoped<ScheduleService>();
 

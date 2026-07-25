@@ -1,7 +1,6 @@
 ﻿using Contracts.Messages.Frontend;
 using MassTransit;
 using Microsoft.AspNetCore.SignalR;
-using Models.Abstraction;
 using System.Text.Json;
 using WebAPI.Messaging.Consumers.Query;
 

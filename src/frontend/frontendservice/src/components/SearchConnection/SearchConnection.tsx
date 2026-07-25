@@ -1,19 +1,21 @@
 import {useEffect, useState} from "react";
-import {useTrainStations} from "../../utils/UseTrainStations.ts";
 import {sendTrainConnectionsQuery} from "../../utils/UseTrainConnections.ts";
 import {useSignalR} from "../../hooks/useSignalR.ts";
-import type {TrainConnection, TrainConnectionSegment, TrainConnectionsMessage} from "../../data/trainConnection.ts";
+import type {
+    RawTrainConnection,
+    RawTrainConnectionSegment,
+    TrainConnection,
+    TrainConnectionsMessage
+} from "../../data/trainConnection.ts";
+import type {SearchConnectionProps} from "../TrainConnections/TrainConnections.tsx";
 
-function SearchConnectionComponent() {
+function SearchConnection({trainStations, setTrainConnections}: SearchConnectionProps) {
     const {connection} = useSignalR();
 
-    const [trainConnections, setTrainConnections] = useState<TrainConnection[]>([]);
+    // const trainStations = useTrainStations().map((station) => ({value: station.id, label: station.name}));
 
-    const trainStations = useTrainStations().map((station) =>
-        ({value: station.id, label: station.name}));
-
-    const defaultStart = trainStations[0]?.value || "";
-    const defaultEnd = trainStations[1]?.value || trainStations[0]?.value || "";
+    const defaultStart = trainStations[8]?.value || "";
+    const defaultEnd = trainStations[9]?.value || trainStations[8]?.value || "";
 
     const [startStation, setStartStation] = useState<string>(defaultStart);
     const [endStation, setEndStation] = useState<string>(defaultEnd);
@@ -23,42 +25,46 @@ function SearchConnectionComponent() {
     }));
     const [departureDate, setDepartureDate] = useState(new Date().toISOString().split('T')[0]);
 
-    const activeStartStation = startStation || trainStations[0]?.value || "";
-    const activeEndStation = endStation || trainStations[1]?.value || trainStations[0]?.value || "";
+    const activeStartStation = startStation || defaultStart;
+    const activeEndStation = endStation || defaultEnd;
 
     useEffect(() => {
         if (!connection) return;
 
         const handleReceiveConnections = (data: string) => {
-            console.log("Trying to parse TrainConnectionsQueryResponse");
             try {
                 const rawData: TrainConnectionsMessage = JSON.parse(data);
 
-                const parsedData = rawData?.MessageItems?.map((item: TrainConnection) => ({
-                    trainChanges: item?.trainChanges,
-                    segments: (item?.segments || []).map((seg: TrainConnectionSegment) => ({
-                        trainCompositionId: seg.trainCompositionId,
-                        startStationId: seg.startStationId,
-                        endStationId: seg.endStationId,
-                        departureTime: seg.departureTime,
-                        arrivalTime: seg.arrivalTime,
-                        duration: seg.duration,
+                const parsedData: TrainConnection[] = rawData?.MessageItems?.map((item: RawTrainConnection) => ({
+                    trainChanges: item?.TrainChanges,
+                    segments: (item?.Segments || []).map((seg: RawTrainConnectionSegment) => ({
+                        trainCompositionId: seg.TrainCompositionId,
+                        startStationId: seg.StartStation,
+                        endStationId: seg.EndStation,
+                        departureTime: seg.DepartureTime,
+                        arrivalTime: seg.ArrivalTime,
+                        duration: seg.Duration,
                     }))
                 })) || [];
-                setTrainConnections(parsedData);
-                console.log(parsedData);
-                console.log(rawData);
+
+                console.log("Raw Data:", rawData);
+                console.log("Parsed Data:", parsedData);
+
+                if (setTrainConnections) {
+                    setTrainConnections(parsedData);
+                }
+
             } catch (error) {
                 console.error("Error parsing stations:", error);
             }
-        }
+        };
 
-        connection.on("ReceiveTrainConnectionsQueryResponse", handleReceiveConnections)
+        connection.on("ReceiveTrainConnectionsQueryResponse", handleReceiveConnections);
 
         return () => {
             connection.off("ReceiveTrainConnectionsQueryResponse", handleReceiveConnections);
         };
-    }, [trainConnections, connection, connection?.state])
+    }, [connection, setTrainConnections]);
 
     const handleClick = () => {
         if (!connection) return;
@@ -132,4 +138,4 @@ function SearchConnectionComponent() {
     );
 }
 
-export default SearchConnectionComponent;
+export default SearchConnection;

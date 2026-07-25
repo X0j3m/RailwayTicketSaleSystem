@@ -1,4 +1,4 @@
-import "./TrainStationMarkerComponent.css";
+import "./TrainStationMarker.css";
 import 'leaflet/dist/leaflet.css';
 import {CircleMarker, Tooltip} from "react-leaflet";
 import type {TrainStation} from "../../data/trainStations.ts";
@@ -9,7 +9,7 @@ interface TrainStationMarkerProps {
     station: TrainStation;
 }
 
-function TrainStationMarkerComponent({station}: TrainStationMarkerProps) {
+function TrainStationMarker({station}: TrainStationMarkerProps) {
     const position: [number, number] = [station.latitude, station.longitude];
 
     const [isOpen, setIsOpen] = useState(false);
@@ -66,4 +66,4 @@ function TrainStationMarkerComponent({station}: TrainStationMarkerProps) {
     );
 }
 
-export default TrainStationMarkerComponent;
+export default TrainStationMarker;

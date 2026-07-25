@@ -12,6 +12,8 @@ var builder = Host.CreateApplicationBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("MicrosoftSQLServer") ?? throw new ArgumentNullException("MicrosoftSQLServer");
 
+builder.Services.AddHealthChecks();
+
 builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
 builder.Services.AddScoped<FleetService>();
 

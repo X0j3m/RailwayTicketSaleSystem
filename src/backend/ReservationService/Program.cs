@@ -5,6 +5,9 @@ using ReservationsService.QueueHandler;
 Console.WriteLine("Starting ReservationService");
 
 var builder = Host.CreateApplicationBuilder(args);
+
+builder.Services.AddHealthChecks();
+
 builder.Services.AddScoped<ReservationCommandConsumer>();
 builder.Services.AddScoped<CancelReservationCommandConsumer>();
 builder.Services.AddMassTransit(x =>

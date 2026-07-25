@@ -6,7 +6,6 @@ using WebAPI.Messaging.Consumers.Query;
 using WebAPI.Messaging.Senders;
 
 Console.WriteLine("Starting WebAPI");
-Thread.Sleep(5000);
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -9,11 +9,11 @@ WORKDIR /app
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /app
-COPY ["./TimetableService.csproj", "./TimetableService/"]
-RUN dotnet restore ".TimetableService.csproj"
+WORKDIR /src
+COPY ["src/backend/TimetableService/TimetableService.csproj", "src/backend/TimetableService/"]
+RUN dotnet restore "src/backend/TimetableService/TimetableService.csproj"
 COPY . .
-WORKDIR "/app/TimetableService"
+WORKDIR "/src/src/backend/TimetableService"
 RUN dotnet build "./TimetableService.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage

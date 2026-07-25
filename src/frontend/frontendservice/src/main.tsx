@@ -1,18 +1,14 @@
 import {StrictMode} from 'react'
 import {createRoot} from 'react-dom/client'
 import {SignalRProvider} from "./context/SignalRProvider.tsx";
-import App from "./App.tsx";
-import ConnectionStatus from "./components/ConnectionStatus/ConnectionStatus.tsx";
-// import MapComponent from "./components/MapComponent/MapComponent.tsx";
-import SearchConnectionComponent from "./components/SearchConnectionComponent/SearchConnectionComponent.tsx";
+import ConnectionStatus from "./components/ConnectionStatus/ConnectionStatus";
+import TrainConnections from "./components/TrainConnections/TrainConnections.tsx";
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <SignalRProvider>
             <ConnectionStatus/>
-            <SearchConnectionComponent/>
-            {/*<MapComponent/>*/}
-            <App/>
+            <TrainConnections/>
         </SignalRProvider>
-    </StrictMode>,
+    </StrictMode>
 )
