@@ -21,33 +21,30 @@ namespace TimetableService.Services
             string sourceStationId,
             string targetStationId,
             string departureDate,
-            string departureTime)
+            string departureTime,
+            int departureWindowMinutes,
+            int maxNumOfTransfers)
         {
-            var query = @"
-            MATCH (source:Stop {station_id: toLower($sourceStationId)})
-            MATCH (target:Stop {station_id: toLower($targetStationId)})
-            WHERE source.departure_time >= $departureTime
-            CALL apoc.algo.dijkstra(source, target, 'LEADS_TO>|TRANSFER>', 'time') 
-            YIELD path, weight
-            WHERE type(relationships(path)[0]) = 'LEADS_TO'
-              AND type(relationships(path)[-1]) = 'LEADS_TO'
-              AND weight < 1440.0
+            var query = GetTrainConnectionsQueryString();
 
-            WITH path, weight, [r IN relationships(path) WHERE type(r) = 'TRANSFER'] AS transfers
+            if (!TimeSpan.TryParse(departureTime, out var depTimeSpan))
+            {
+                depTimeSpan = TimeSpan.Zero;
+            }
+            int departureTimeMinutes = (int)depTimeSpan.TotalMinutes;
 
-            WITH weight, nodes(path)[0] AS source_node,
-                 [nodes(path)[0]] + 
-                 reduce(acc = [], r IN transfers | acc + [startNode(r), endNode(r)]) + 
-                 [nodes(path)[-1]] AS connection
-
-            RETURN connection, weight AS trip_time
-            ORDER BY source_node.departure_time ASC";
-            var queryParameters = new { sourceStationId, targetStationId, departureTime };
+            var queryParameters = new
+            {
+                sourceStationId,
+                targetStationId,
+                departureTimeMinutes,
+                departureWindowMinutes,
+                maxNumOfTransfers
+            };
 
             await using var session = _driver.AsyncSession();
 
             var result = new List<TrainConnectionDto>();
-
             try
             {
                 var resultCursor = await session.RunAsync(query, queryParameters);
@@ -56,21 +53,37 @@ namespace TimetableService.Services
                 {
                     var record = resultCursor.Current;
 
-                    var tripTime = record["trip_time"].As<double>().As<int>();
-                    var connectionNodes = record["connection"].As<IReadOnlyList<INode>>();
+                    var departure = record["departure"].As<string>();
+                    var arrival = record["arrival"].As<string>();
+                    var totalTripTime = record["total_trip_time"].As<int>();
+                    var numOfTransfers = record["num_of_transfers"].As<int>();
+                    var relationTypes = record["relation_types"].As<List<string>>();
+                    var stationIds = record["station_ids"].As<List<string>>();
+                    var rawTransferDetails = record["transfer_details"].As<List<object>>();
 
-                    var connectionDto = new TrainConnectionDto { TrainChanges = (connectionNodes.Count / 2) - 1 };
+                    List<TransferDetail> transferDetails = rawTransferDetails
+                        .OfType<IReadOnlyDictionary<string, object>>()
+                        .Select(dict => new TransferDetail
+                        {
+                            ArrivalTime = dict["arrival_time"].As<string>(),
+                            DepartureTime = dict["departure_time"].As<string>(),
+                            StationId = dict["station_id"].As<string>(),
+                            TransferTime = dict["transfer_time"].As<int>(),
+                        })
+                        .ToList();
 
-                    for (int i = 0; i < connectionNodes.Count; i += 2)
+                    var trainConnectionDto = new TrainConnectionDto
                     {
-                        var startNode = connectionNodes[i];
-                        var endNode = connectionNodes[i + 1];
+                        DepartureTime = departure,
+                        ArrivalTime = arrival,
+                        TotalTripTime = totalTripTime,
+                        RelationTypes = relationTypes,
+                        TransferDetails = transferDetails,
+                        NumOfTransfers = numOfTransfers,
+                        StationIds = stationIds
+                    };
 
-                        var segment = MapNodesPairToSegment(startNode, endNode, departureDate);
-                        connectionDto.Segments.Add(segment);
-                    }
-
-                    result.Add(connectionDto);
+                    result.Add(trainConnectionDto);
                 }
             }
             catch (Exception ex)
@@ -82,114 +95,63 @@ namespace TimetableService.Services
             return result;
         }
 
-        private TrainConnectionSegment MapNodesPairToSegment(INode startNode, INode endNode, string departureDate)
+        private string GetTrainConnectionsQueryString()
         {
-            DateTimeOffset date = DateTimeOffset.ParseExact(
-                departureDate,
-                "yyyy-MM-dd",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.AssumeLocal
-            );
+            return @"
+        WITH 
+          toLower($sourceStationId) AS sourceStationId,
+          toLower($targetStationId) AS targetStationId,
+          $departureTimeMinutes AS minDepartureTime,
+          $departureWindowMinutes AS departureWindowMinutes,
+          $maxNumOfTransfers AS maxTransfers
 
-            var departureTimeString = endNode.Properties.GetValueOrDefault("departure_time", null).As<string>();
-            var arrivalTimeString = endNode.Properties.GetValueOrDefault("arrival_time", null).As<string>();
+        MATCH (sourceStation:TrainStation {station_id: sourceStationId})<-[:LOCATED_AT]-(startStop:Stop)
+        WHERE startStop.departure_time_minutes >= minDepartureTime
+          AND startStop.departure_time_minutes <= minDepartureTime + departureWindowMinutes
 
-            TimeSpan.TryParse(departureTimeString, out TimeSpan departureTimeSpan);
-            TimeSpan.TryParse(arrivalTimeString, out TimeSpan arrivalTimeSpan);
+        MATCH (targetStation:TrainStation {station_id: targetStationId})<-[:LOCATED_AT]-(endStop:Stop)
 
-            var departureTime = date + departureTimeSpan;
-            var arrivalTime = date + arrivalTimeSpan;
+        CALL apoc.algo.dijkstra(
+          startStop,
+          endStop,
+          'LEADS_TO>|TRANSFER>',
+          'time'
+        ) YIELD path, weight
 
-            return new TrainConnectionSegment
-            {
-                TrainCompositionId = Guid.Parse(startNode.Properties.GetValueOrDefault("train_composition_id", Guid.Empty).As<string>()),
-                StartStation = Guid.Parse(startNode.Properties.GetValueOrDefault("station_id", Guid.Empty).As<string>()),
-                EndStation = Guid.Parse(endNode.Properties.GetValueOrDefault("station_id", Guid.Empty).As<string>()),
-                DepartureTime = departureTime,
-                ArrivalTime = arrivalTime,
-                Duration = arrivalTime - departureTime
-            };
-        }
+        WITH path, startStop, endStop, weight, targetStationId,
+             relationships(path) AS rels,
+             nodes(path) AS sequenceNodes,
+             size([r IN relationships(path) WHERE type(r) = 'TRANSFER']) AS num_of_transfers,
+             [n IN nodes(path) | n.station_id] AS stationIds
 
-        public async Task<List<TrainTripDto>> GetDijkstraRouteAsync(string sourceStationId, string targetStationId, string departureTime)
-        {
-            var query = @"
-            MATCH (source:Stop {station_id: toLower($sourceStationId)})
-            MATCH (target:Stop {station_id: toLower($targetStationId)})
-            WHERE source.departure_time < $departureTime
-            CALL apoc.algo.dijkstra(source, target, 'LEADS_TO>|TRANSFER>', 'time') 
-            YIELD path, weight
-            WHERE type(relationships(path)[0]) = 'LEADS_TO'
-              AND type(relationships(path)[-1]) = 'LEADS_TO'
-            RETURN path, weight AS trip_time";
-            var queryParameters = new { sourceStationId, targetStationId, departureTime };
+        WHERE 
+          num_of_transfers <= maxTransfers
+          
+          AND type(rels[0]) = 'LEADS_TO'
+          AND type(rels[-1]) = 'LEADS_TO'
+          
+          AND NONE(i IN range(0, size(rels) - 2) WHERE
+            type(rels[i]) = 'TRANSFER' AND type(rels[i+1]) = 'TRANSFER'
+          )
+          
+          AND NONE(i IN range(2, size(stationIds) - 1) WHERE stationIds[i] IN stationIds[..i-1])
+          
+          AND ALL(sid IN stationIds[..-1] WHERE sid <> targetStationId)
 
-            await using var session = _driver.AsyncSession();
-
-            var results = new List<TrainTripDto>();
-            try
-            {
-                var resultCursor = await session.RunAsync(query, queryParameters);
-
-                while (await resultCursor.FetchAsync())
-                {
-                    var record = resultCursor.Current;
-
-                    var tripTime = record["trip_time"].As<double>().As<int>();
-
-                    var path = record["path"].As<IPath>();
-                    var tripResult = new TrainTripDto { TripTime = tripTime };
-
-                    bool isFirst = true;
-                    var nodes = path.Nodes;
-                    var relationships = path.Relationships;
-
-                    if (nodes.Count > 0)
-                    {
-                        tripResult.Path.Add(MapNode(nodes[0]));
-                    }
-
-                    for (int i = 0; i < relationships.Count; i++)
-                    {
-                        tripResult.Path.Add(MapRelationship(relationships[i]));
-                        tripResult.Path.Add(MapNode(nodes[i + 1]));
-                    }
-
-                    results.Add(tripResult);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                throw;
-            }
-
-            return results;
-        }
-
-        private StopDto MapNode(INode node)
-        {
-            return new StopDto
-            {
-                StopId = node.Properties.GetValueOrDefault("stop_id", null).As<string>(),
-                StationId = node.Properties.GetValueOrDefault("station_id", null).As<string>(),
-                ArrivalTime = node.Properties.GetValueOrDefault("arrival_time", null).As<string>(),
-                DepartureTime = node.Properties.GetValueOrDefault("departure_time", null).As<string>(),
-                ArrivalTimeMinutes = node.Properties.ContainsKey("arrival_time_minutes") ? node.Properties["arrival_time_minutes"].As<int>() : null,
-                DepartureTimeMinutes = node.Properties.ContainsKey("departure_time_minutes") ? node.Properties["departure_time_minutes"].As<int>() : null,
-                StartStationTime = node.Properties.GetValueOrDefault("start_station_time", null).As<string>(),
-                TrainCompositionId = node.Properties.GetValueOrDefault("train_composition_id", null).As<string>()
-            };
-
-        }
-
-        private TrainTripSegment MapRelationship(IRelationship rel)
-        {
-            return new TrainTripSegment
-            {
-                Type = rel.Type,
-                Time = rel.Properties.GetValueOrDefault("time", 0.0).As<double>().As<int>()
-            };
+        RETURN
+          startStop.departure_time AS departure,
+          endStop.arrival_time AS arrival,
+          weight AS total_trip_time,
+          [r IN rels | type(r)] AS relation_types,
+          [i IN range(0, size(rels) - 1) WHERE type(rels[i]) = 'TRANSFER' | {
+            station_id: sequenceNodes[i].station_id,
+            transfer_time: rels[i].time,
+            arrival_time: sequenceNodes[i].arrival_time,
+            departure_time: sequenceNodes[i+1].departure_time
+          }] AS transfer_details,
+          num_of_transfers,
+          stationIds AS station_ids
+        ORDER BY departure ASC, total_trip_time ASC, num_of_transfers ASC";
         }
     }
 }

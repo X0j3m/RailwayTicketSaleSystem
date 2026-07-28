@@ -1,34 +1,21 @@
-// BACKEND
-export interface RawTrainConnectionSegment {
-    TrainCompositionId?: string;
-    StartStation?: string;
-    EndStation?: string;
+export interface TrainConnection {
     DepartureTime?: string;
     ArrivalTime?: string;
-    Duration?: string;
+    TotalTripTime?: number;
+    RelationTypes?: string[];
+    TransferDetails?: TransferDetail[];
+    NumOfTransfers: number;
+    StationIds?: string[];
 }
 
-export interface RawTrainConnection {
-    Segments?: RawTrainConnectionSegment[];
-    TrainChanges?: number;
+export interface TransferDetail {
+    StationId?: string;
+    ArrivalTime?: string;
+    DepartureTime?: string;
+    TransferTime?: number;
 }
 
 export interface TrainConnectionsMessage {
     MessageTitle?: string;
-    MessageItems?: RawTrainConnection[];
-}
-
-// FRONTEND
-export interface TrainConnectionSegment {
-    trainCompositionId?: string;
-    startStationId?: string;
-    endStationId?: string;
-    departureTime?: string;
-    arrivalTime?: string;
-    duration?: string;
-}
-
-export interface TrainConnection {
-    segments?: TrainConnectionSegment[];
-    trainChanges?: number;
+    MessageItems?: TrainConnection[];
 }

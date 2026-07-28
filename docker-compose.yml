@@ -6,17 +6,17 @@ x-common-healthcheck: &default-healthcheck
   retries: 5
 
 services:
-  frontend:
-    image: frontend
-    container_name: frontend
-    hostname: frontend
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    networks:
-      - app_network
-    depends_on:
-      - web_api
+  # frontend:
+  #   image: frontend
+  #   container_name: frontend
+  #   hostname: frontend
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - app_network
+  #   depends_on:
+  #     - web_api
 
   web_api:
     image: web_api

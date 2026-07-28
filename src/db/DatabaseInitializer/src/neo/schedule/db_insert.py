@@ -1,5 +1,4 @@
-from neo.db_handler import DatabaseConnection, bulk_save_entities, clear_database, clear_temp_properties, \
-    create_relations
+from neo.db_handler import DatabaseConnection, bulk_save_entities, create_relations, create_indexes
 from neo.schedule.models import StopModel, LeadsToRelationModel, TransferRelationModel
 from neo.schedule.nodes import Stop, TrainStation
 from sql.fleet.models import StationModel
@@ -7,6 +6,14 @@ from utils.json_handler import open_json_file
 from datetime import datetime, timedelta
 
 from utils.logger import create_logger
+
+
+def convert_to_minutes(time: str):
+    if time is None:
+        return None
+    time_obj = datetime.strptime(time, '%H:%M:%S')
+    minutes = time_obj.hour * 60 + time_obj.minute
+    return minutes
 
 
 def add_minutes(time: str, minutes: int):
@@ -38,10 +45,10 @@ def insert_schedule(db_connection: DatabaseConnection):
     logger.info("Formatting stops")
     stops = [Stop(
         stop_id=stop.id,
-        start_station_time=stop.start_station_time,
-        arrival_time_minutes=stop.arrival_time_minutes,
+        start_station_time_minutes=convert_to_minutes(stop.start_station_time),
+        arrival_time_minutes=convert_to_minutes(add_minutes(stop.start_station_time, stop.arrival_time_minutes)),
         arrival_time=add_minutes(stop.start_station_time, stop.arrival_time_minutes),
-        departure_time_minutes=stop.departure_time_minutes,
+        departure_time_minutes=convert_to_minutes(add_minutes(stop.start_station_time, stop.departure_time_minutes)),
         departure_time=add_minutes(stop.start_station_time, stop.departure_time_minutes),
         station_id=stop.station_id,
         train_composition_id=stop.train_composition_id
@@ -91,6 +98,8 @@ def insert_schedule(db_connection: DatabaseConnection):
         """
     logger.info("Inserting TRANSFER relations")
     create_relations(transfers_query, transfers_relations)
-    
+
+    logger.info("Creating indexes for faster searching")
+    create_indexes()
     # logger.info("Clearing temporary properties")
     # clear_temp_properties()

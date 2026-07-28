@@ -14,10 +14,10 @@ Actions:
 Service arguments (Optional):
   -ui                   Target: frontend image
   -api                  Target: webapi image
-  -db_init			    Target: db_initializer image
+  -db_init              Target: db_initializer image
   -timetable            Target: timetable_service image
   -train_fleet          Target: train_fleet_service image
-  -reservation		    Target: reservation_service image
+  -reservation          Target: reservation_service image
   
 
 Examples:

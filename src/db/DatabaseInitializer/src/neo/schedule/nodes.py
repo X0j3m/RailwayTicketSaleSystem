@@ -20,12 +20,12 @@ class TrainStation(StructuredNode):
 
 class Stop(StructuredNode):
     stop_id = StringProperty(unique_index=True, required=True)
-    start_station_time = StringProperty()
+    start_station_time_minutes = IntegerProperty()
     arrival_time_minutes = IntegerProperty()
     arrival_time = StringProperty()
     departure_time_minutes = IntegerProperty()
     departure_time = StringProperty()
-    station_id = StringProperty()
+    station_id = StringProperty(index=True)
     train_composition_id = StringProperty()
 
     station = RelationshipTo('TrainStation', 'LOCATED_AT')

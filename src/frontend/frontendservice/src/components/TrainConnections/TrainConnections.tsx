@@ -1,6 +1,6 @@
 import SearchConnection from "../SearchConnection/SearchConnection.tsx";
 import {useState} from "react";
-import type {TrainConnection, TrainConnectionSegment} from "../../data/trainConnection.ts";
+import type {TrainConnection} from "../../data/trainConnection.ts";
 import {useTrainStations} from "../../utils/UseTrainStations.ts";
 
 export interface SearchConnectionProps {
@@ -17,21 +17,28 @@ function TrainConnections() {
     return (
         <>
             <SearchConnection trainStations={trainStations} setTrainConnections={setTrainConnections}/>
+
+            {trainConnections.length == 0 && <p><strong>No connections</strong></p>}
+
             {trainConnections && trainConnections.length > 0 &&
                 trainConnections.map((trainConnection: TrainConnection) => {
                     console.log(trainConnection);
                     return (
                         <div>
                             Train Connection
+                            <br/>Departure:
+                            {trainConnection.DepartureTime}
+                            <br/>Arrival:
+                            {trainConnection.ArrivalTime}
                             <br/>Train changes:
-                            {trainConnection.trainChanges}
+                            {trainConnection.NumOfTransfers}
                             <br/>Segments:
-                            {trainConnection.segments?.map((segment: TrainConnectionSegment) => {
-                                return (<p>
-                                    {segment.departureTime}
-                                    {segment.arrivalTime}
-                                </p>)
-                            })}
+                            <ul>
+                                {trainConnection.StationIds?.map((s: string) => {
+                                    const station = trainStations.find(station => station.value == s);
+                                    return (<li>{station?.label}</li>);
+                                })}
+                            </ul>
                         </div>);
                 })
             }

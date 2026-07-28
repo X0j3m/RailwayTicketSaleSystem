@@ -2,12 +2,11 @@ import {useEffect, useState} from "react";
 import {sendTrainConnectionsQuery} from "../../utils/UseTrainConnections.ts";
 import {useSignalR} from "../../hooks/useSignalR.ts";
 import type {
-    RawTrainConnection,
-    RawTrainConnectionSegment,
     TrainConnection,
+    TransferDetail,
     TrainConnectionsMessage
 } from "../../data/trainConnection.ts";
-import type {SearchConnectionProps} from "../TrainConnections/TrainConnections.tsx";
+import {type SearchConnectionProps} from "../TrainConnections/TrainConnections.tsx";
 
 function SearchConnection({trainStations, setTrainConnections}: SearchConnectionProps) {
     const {connection} = useSignalR();
@@ -35,17 +34,20 @@ function SearchConnection({trainStations, setTrainConnections}: SearchConnection
             try {
                 const rawData: TrainConnectionsMessage = JSON.parse(data);
 
-                const parsedData: TrainConnection[] = rawData?.MessageItems?.map((item: RawTrainConnection) => ({
-                    trainChanges: item?.TrainChanges,
-                    segments: (item?.Segments || []).map((seg: RawTrainConnectionSegment) => ({
-                        trainCompositionId: seg.TrainCompositionId,
-                        startStationId: seg.StartStation,
-                        endStationId: seg.EndStation,
-                        departureTime: seg.DepartureTime,
-                        arrivalTime: seg.ArrivalTime,
-                        duration: seg.Duration,
-                    }))
-                })) || [];
+                const parsedData: TrainConnection[] = rawData?.MessageItems?.map((conn: TrainConnection) => ({
+                    DepartureTime: conn?.DepartureTime,
+                    ArrivalTime: conn?.ArrivalTime,
+                    TotalTripTime: conn?.TotalTripTime,
+                    RelationTypes: conn?.RelationTypes,
+                    TransferDetails: (conn?.TransferDetails || []).map((detail: TransferDetail)=> ({
+                        StationId: detail?.StationId,
+                        ArrivalTime: detail?.ArrivalTime,
+                        DepartureTime: detail?.DepartureTime,
+                        TransferTime: detail?.TransferTime,
+                    })) || [],
+                    NumOfTransfers: conn?.NumOfTransfers,
+                    StationIds: conn?.StationIds,
+                })) || []
 
                 console.log("Raw Data:", rawData);
                 console.log("Parsed Data:", parsedData);
@@ -68,7 +70,7 @@ function SearchConnection({trainStations, setTrainConnections}: SearchConnection
 
     const handleClick = () => {
         if (!connection) return;
-
+        setTrainConnections([]);
         if (connection.state === "Connected") {
             sendTrainConnectionsQuery(connection, activeStartStation, activeEndStation, departureDate, departureTime);
         }

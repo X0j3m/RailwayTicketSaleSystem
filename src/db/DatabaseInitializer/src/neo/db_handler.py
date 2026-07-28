@@ -33,6 +33,9 @@ def clear_temp_properties():
     db.cypher_query("MATCH (n:Stop) REMOVE n.station_id")
 
 
+def create_indexes():
+    db.cypher_query("CREATE INDEX stop_search_idx FOR (s:Stop) ON (s.station_id, s.departure_time_minutes)")
+
 def bulk_save_entities(db_connection: DatabaseConnection, model_class: Type[StructuredNode],
                        entities: List[Any]):
     print(f"Saving entities to database {db_connection}")   

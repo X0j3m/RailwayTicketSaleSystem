@@ -31,7 +31,13 @@ namespace TimetableService.QueueHandler
             var departureTime = message.DepartureTime;
             var departureDate = message.DepartureDate;
 
-            var results = await _scheduleService.GetTrainConnections(sourceStationId, targetStationId, departureDate, departureTime);
+            var results = await _scheduleService.GetTrainConnections(
+                sourceStationId,
+                targetStationId,
+                departureDate,
+                departureTime,
+                6 * 60,
+                5);
 
             await _endpoint.Publish(new TrainConnectionsQueryResponse
             {
