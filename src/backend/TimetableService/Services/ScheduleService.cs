@@ -59,6 +59,7 @@ namespace TimetableService.Services
                     var numOfTransfers = record["num_of_transfers"].As<int>();
                     var relationTypes = record["relation_types"].As<List<string>>();
                     var stationIds = record["station_ids"].As<List<string>>();
+                    var trainCompositionIds = record["train_composition_ids"].As<List<string>>();
                     var rawTransferDetails = record["transfer_details"].As<List<object>>();
 
                     List<TransferDetail> transferDetails = rawTransferDetails
@@ -80,7 +81,8 @@ namespace TimetableService.Services
                         RelationTypes = relationTypes,
                         TransferDetails = transferDetails,
                         NumOfTransfers = numOfTransfers,
-                        StationIds = stationIds
+                        StationIds = stationIds,
+                        TrainCompositionIds = trainCompositionIds
                     };
 
                     result.Add(trainConnectionDto);
@@ -118,24 +120,28 @@ namespace TimetableService.Services
           'time'
         ) YIELD path, weight
 
-        WITH path, startStop, endStop, weight, targetStationId,
+        WITH path, startStop, endStop, weight, targetStationId, maxTransfers,
              relationships(path) AS rels,
              nodes(path) AS sequenceNodes,
              size([r IN relationships(path) WHERE type(r) = 'TRANSFER']) AS num_of_transfers,
-             [n IN nodes(path) | n.station_id] AS stationIds
+             [n IN nodes(path) | n.station_id] AS stationIds,
+             [n IN nodes(path) WHERE n.train_composition_id IS NOT NULL | n.train_composition_id] AS rawIds
+
+        WITH path, startStop, endStop, weight, targetStationId, maxTransfers, rels, sequenceNodes, num_of_transfers, stationIds,
+             [i IN range(0, size(rawIds)-1) WHERE NOT rawIds[i] IN rawIds[..i] | rawIds[i]] AS trainCompositionIds
 
         WHERE 
           num_of_transfers <= maxTransfers
-          
+  
           AND type(rels[0]) = 'LEADS_TO'
           AND type(rels[-1]) = 'LEADS_TO'
-          
+  
           AND NONE(i IN range(0, size(rels) - 2) WHERE
             type(rels[i]) = 'TRANSFER' AND type(rels[i+1]) = 'TRANSFER'
           )
-          
+  
           AND NONE(i IN range(2, size(stationIds) - 1) WHERE stationIds[i] IN stationIds[..i-1])
-          
+  
           AND ALL(sid IN stationIds[..-1] WHERE sid <> targetStationId)
 
         RETURN
@@ -150,7 +156,8 @@ namespace TimetableService.Services
             departure_time: sequenceNodes[i+1].departure_time
           }] AS transfer_details,
           num_of_transfers,
-          stationIds AS station_ids
+          stationIds AS station_ids,
+          trainCompositionIds AS train_composition_ids
         ORDER BY departure ASC, total_trip_time ASC, num_of_transfers ASC";
         }
     }

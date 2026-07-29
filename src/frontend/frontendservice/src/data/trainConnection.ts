@@ -6,6 +6,7 @@ export interface TrainConnection {
     TransferDetails?: TransferDetail[];
     NumOfTransfers: number;
     StationIds?: string[];
+    TrainCompositionIds?: string[];
 }
 
 export interface TransferDetail {

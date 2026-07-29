@@ -7,19 +7,22 @@ export function useTrainStations() {
     const [trainStations, setStations] = useState<TrainStation[]>([]);
 
     useEffect(() => {
+        if (trainStations.length != 0) return;
         if (!connection) return;
 
         const handleReceiveStations = (data: string) => {
             try {
                 const parsedData: StationsMessage = JSON.parse(data);
 
-                const cleanStations: TrainStation[] = parsedData.MessageItems.map((item) => ({
-                    ...item,
-                    city: item.city.replace(/\s+/g, ' ').trim(),
-                    name: item.name.replace(/\s+/g, ' ').trim(),
+                const stations: TrainStation[] = parsedData?.MessageItems?.map((station: TrainStation) => ({
+                    id: station.id,
+                    city: station.city,
+                    name: station.name,
+                    latitude: station.latitude,
+                    longitude: station.longitude
                 }));
 
-                setStations(cleanStations);
+                setStations(stations);
             } catch (error) {
                 console.error("Error parsing stations:", error);
             }
@@ -38,7 +41,7 @@ export function useTrainStations() {
         return () => {
             connection.off("ReceiveStationsQueryResponse", handleReceiveStations);
         };
-    }, [connection, connection?.state]);
+    }, [connection, connection?.state, trainStations.length]);
 
     return trainStations.sort((a,b) =>
         a.name.localeCompare(b.name)

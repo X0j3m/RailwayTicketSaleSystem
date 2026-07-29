@@ -11,6 +11,7 @@ namespace Models.Dto
         public List<TransferDetail> TransferDetails { get; init; }
         public int NumOfTransfers { get; init; }
         public List<string> StationIds { get; init; }
+        public List<string> TrainCompositionIds { get; init; }
     }
 
     public record TransferDetail

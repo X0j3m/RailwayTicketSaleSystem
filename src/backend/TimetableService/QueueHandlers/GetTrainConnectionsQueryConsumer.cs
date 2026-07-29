@@ -1,6 +1,5 @@
 ﻿using Contracts.Messages.Backend.Query;
 using MassTransit;
-using Models.Dto;
 using TimetableService.Services;
 
 namespace TimetableService.QueueHandler
@@ -31,11 +30,7 @@ namespace TimetableService.QueueHandler
             var departureTime = message.DepartureTime;
             var departureDate = message.DepartureDate;
 
-            _logger.LogInformation($@"Received GetTrainConnectionsQuery: ConnectionId={connectionId},
-                                                                         StartStation={sourceStationId},
-                                                                         EndStation={targetStationId},
-                                                                         DepartureTime={departureTime},
-                                                                         DepartureDate={departureDate}");
+            _logger.LogInformation($"Received GetTrainConnectionsQuery: ConnectionId={connectionId}, StartStation={sourceStationId}, EndStation={targetStationId}, DepartureTime={departureTime}, DepartureDate={departureDate}");
 
             var results = await _scheduleService.GetTrainConnections(
                 sourceStationId,

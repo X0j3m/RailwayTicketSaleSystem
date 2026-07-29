@@ -1,45 +1,45 @@
-import SearchConnection from "../SearchConnection/SearchConnection.tsx";
-import {useState} from "react";
+import {type Dispatch, type SetStateAction, useState} from "react";
 import type {TrainConnection} from "../../data/trainConnection.ts";
 import {useTrainStations} from "../../utils/UseTrainStations.ts";
+import SearchBar from "./SearchBar/SearchBar.tsx";
+import TrainConnectionBlock from "./TrainConnectionBlock/TrainConnectionBlock.tsx";
+import TrainConnectionsMap from "../TrainConnectionsMap/TrainConnectionsMap.tsx";
 
-export interface SearchConnectionProps {
-    trainStations: Array<{ value: string; label: string }>;
-    setTrainConnections: React.Dispatch<React.SetStateAction<TrainConnection[]>>;
-}
+export type StartStationState = [
+        string | undefined,
+    Dispatch<SetStateAction<string | undefined>>
+];
+
+export type EndStationState = [
+        string | undefined,
+    Dispatch<SetStateAction<string | undefined>>
+];
 
 function TrainConnections() {
     const [trainConnections, setTrainConnections] = useState<TrainConnection[]>([]);
+    const [startStationId, setStartStationId] = useState<string | undefined>(undefined);
+    const [endStationId, setEndStationId] = useState<string | undefined>(undefined);
 
-    const trainStations = useTrainStations().map((station) =>
-        ({value: station.id, label: station.name}));
+    const trainStations = useTrainStations();
+
+    console.log(trainStations);
 
     return (
         <>
-            <SearchConnection trainStations={trainStations} setTrainConnections={setTrainConnections}/>
+            <SearchBar
+                trainStations={trainStations}
+                setTrainConnections={setTrainConnections}
+                startStationState={[startStationId, setStartStationId]}
+                endStationState={[endStationId, setEndStationId]}/>
 
-            {trainConnections.length == 0 && <p><strong>No connections</strong></p>}
+            <TrainConnectionsMap
+                trainStations={trainStations}
+                startStationState={[startStationId, setStartStationId]}
+                endStationState={[endStationId, setEndStationId]}/>
 
             {trainConnections && trainConnections.length > 0 &&
                 trainConnections.map((trainConnection: TrainConnection) => {
-                    console.log(trainConnection);
-                    return (
-                        <div>
-                            Train Connection
-                            <br/>Departure:
-                            {trainConnection.DepartureTime}
-                            <br/>Arrival:
-                            {trainConnection.ArrivalTime}
-                            <br/>Train changes:
-                            {trainConnection.NumOfTransfers}
-                            <br/>Segments:
-                            <ul>
-                                {trainConnection.StationIds?.map((s: string) => {
-                                    const station = trainStations.find(station => station.value == s);
-                                    return (<li>{station?.label}</li>);
-                                })}
-                            </ul>
-                        </div>);
+                    return <TrainConnectionBlock trainConnection={trainConnection} trainStations={trainStations}/>
                 })
             }
         </>);
