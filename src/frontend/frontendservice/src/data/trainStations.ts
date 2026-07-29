@@ -7,6 +7,6 @@ export interface TrainStation {
 }
 
 export interface StationsMessage {
-    MessageTitle: string;
+    ConnectionId: string;
     MessageItems: TrainStation[];
 }

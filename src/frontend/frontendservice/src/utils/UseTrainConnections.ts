@@ -11,6 +11,7 @@ export function sendTrainConnectionsQuery(
 
     if (connection.state === "Connected") {
         const args = {
+            connectionId: connection?.connectionId,
             startStation: startStation,
             endStation: endStation,
             departureDate: departureDate,

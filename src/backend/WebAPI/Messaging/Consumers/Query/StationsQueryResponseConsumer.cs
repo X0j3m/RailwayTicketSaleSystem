@@ -21,7 +21,9 @@ namespace WebAPI.Messaging.Consumers.Query
         public async Task Consume(ConsumeContext<StationsQueryResponse> context)
         {
             var response = context.Message;
-            var message = new StationsMessage { MessageItems = response.Stations };
+            var connectionId = response.ConnectionId;
+            _logger.LogInformation($"Recived StationsQueryResponse for connectionId={connectionId}");
+            var message = new StationsMessage { ConnectionId = connectionId, MessageItems = response.Stations };
             await _messageDispatcher.Dispatch("ReceiveStationsQueryResponse", message);
             await Task.CompletedTask;
         }

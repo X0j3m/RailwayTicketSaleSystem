@@ -21,9 +21,11 @@ namespace WebAPI.Hubs
 
         public async Task Dispatch(string methodName, IMessage message)
         {
-            string messageJson = JsonSerializer.Serialize(message, message.GetType());
-            _logger.LogInformation($"Created JSON:\n{messageJson}");
-            await _hubContext.Clients.All.SendAsync(methodName, messageJson);
+            var connectionId = message.ConnectionId;
+            var messageType = message.GetType();
+            string messageJson = JsonSerializer.Serialize(message, messageType);
+            _logger.LogInformation($"Created JSON of {messageType} type for connectionId={connectionId}");
+            await _hubContext.Clients.Client(connectionId).SendAsync(methodName, messageJson);
         }
     }
 }

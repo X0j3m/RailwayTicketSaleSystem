@@ -18,6 +18,7 @@ namespace TrainFleetService.QueueHandler
         public async Task Consume(ConsumeContext<GetAvailableSeatsQuery> context)
         {
             var message = context.Message;
+            var connectionId = message.ConnectionId;
             _logger.LogInformation("Received GetAvailableSeatsQuery: TrainCompositionId={TrainCompositionId}, StartStation={StartStation}, EndStation={EndStation}",
                 message.TrainCompositionId, message.StartStation, message.EndStation);
 
@@ -25,6 +26,7 @@ namespace TrainFleetService.QueueHandler
 
             await _endpoint.Publish(new AvailableSeatsQueryResponse
             {
+                ConnectionId = connectionId,
                 Train = new TrainCompositionDto
                 {
                     TrainType = "Sample Train Type",

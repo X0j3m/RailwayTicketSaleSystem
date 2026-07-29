@@ -16,23 +16,24 @@ namespace WebAPI.Hubs
             _querySender = querySender;
         }
 
-        public async Task GetAllStations()
+        public async Task GetAllStations(GetStationsQuery query)
         {
-            var query = new GetStationsQuery();
-
-            _logger.LogInformation("Sending GetStationsQuery");
+            var connectionId = query.ConnectionId;
+            _logger.LogInformation($"Sending GetStationsQuery from connectionId={connectionId}");
             await _querySender.SendQueryAsync(query, QueueNames.TrainFleetServiceQueue);
         }
 
         public async Task GetTrainCompositions(GetAvailableSeatsQuery query)
         {
-            _logger.LogInformation("Sending GetAvailableSeatsQuery");
+            var connectionId = query.ConnectionId;
+            _logger.LogInformation($"Sending GetAvailableSeatsQuery from connectionId={connectionId}");
             await _querySender.SendQueryAsync(query, QueueNames.TrainFleetServiceQueue);
         }
 
         public async Task GetTrainConnections(GetTrainConnectionsQuery query)
         {
-            _logger.LogInformation("Sending GetTrainConnectionsQuery");
+            var connectionId = query.ConnectionId;
+            _logger.LogInformation($"Sending GetTrainConnectionsQuery from connectionId={connectionId}");
             await _querySender.SendQueryAsync(query, QueueNames.TimetableServiceQueue);
         }
     }

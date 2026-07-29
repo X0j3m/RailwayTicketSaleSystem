@@ -24,12 +24,18 @@ namespace TimetableService.QueueHandler
         public async Task Consume(ConsumeContext<GetTrainConnectionsQuery> context)
         {
             var message = context.Message;
-            _logger.LogInformation($"Received GetTrainConnectionsQuery: StartStation={message.StartStation}, EndStation={message.EndStation}, DepartureTime={message.DepartureTime}, DepartureDate={message.DepartureDate}");
+            var connectionId = message.ConnectionId;
 
             var sourceStationId = message.StartStation.ToString();
             var targetStationId = message.EndStation.ToString();
             var departureTime = message.DepartureTime;
             var departureDate = message.DepartureDate;
+
+            _logger.LogInformation($@"Received GetTrainConnectionsQuery: ConnectionId={connectionId},
+                                                                         StartStation={sourceStationId},
+                                                                         EndStation={targetStationId},
+                                                                         DepartureTime={departureTime},
+                                                                         DepartureDate={departureDate}");
 
             var results = await _scheduleService.GetTrainConnections(
                 sourceStationId,
@@ -41,9 +47,10 @@ namespace TimetableService.QueueHandler
 
             await _endpoint.Publish(new TrainConnectionsQueryResponse
             {
+                ConnectionId = connectionId,
                 Connections = results
             });
-            _logger.LogInformation($"Published response for query: {message.GetType().Name}");
+            _logger.LogInformation($"Published response for {message.GetType().Name} connectionId={connectionId}");
         }
     }
 }

@@ -2,18 +2,24 @@
 
 namespace Contracts.Messages.Backend.Query
 {
-    public record GetStationsQuery : IQuery;
+    public record GetStationsQuery : IQuery
+    {
+        public required string ConnectionId { get; init; }
+    }
+
     public record GetAvailableSeatsQuery : IQuery
     {
+        public required string ConnectionId { get; init; }
         public Guid TrainCompositionId { get; init; }
         public Guid StartStation { get; init; }
         public Guid EndStation { get; init; }
     }
     public record GetTrainConnectionsQuery : IQuery
     {
-        public string StartStation { get; init; }
-        public string EndStation { get; init; }
-        public string DepartureDate { get; init; }
-        public string DepartureTime { get; init; }
+        public required string ConnectionId { get; init; }
+        public required string StartStation { get; init; }
+        public required string EndStation { get; init; }
+        public required string DepartureDate { get; init; }
+        public required string DepartureTime { get; init; }
     }
 }

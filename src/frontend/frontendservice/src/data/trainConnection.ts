@@ -16,6 +16,6 @@ export interface TransferDetail {
 }
 
 export interface TrainConnectionsMessage {
-    MessageTitle?: string;
+    ConnectionId?: string;
     MessageItems?: TrainConnection[];
 }

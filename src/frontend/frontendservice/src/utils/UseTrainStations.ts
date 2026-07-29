@@ -28,7 +28,10 @@ export function useTrainStations() {
         connection.on("ReceiveStationsQueryResponse", handleReceiveStations);
 
         if (connection.state === "Connected") {
-            connection.send("getAllStations")
+            const args = {
+                connectionId: connection?.connectionId
+            }
+            connection.send("getAllStations", args)
                 .catch(err => console.error("Error sending getAllStations: ", err));
         }
 

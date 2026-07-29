@@ -1,6 +1,7 @@
-﻿using Contracts.Messages.Backend;
-
-namespace Contracts.Messages.Backend.Query.Abstraction
+﻿namespace Contracts.Messages.Backend.Query.Abstraction
 {
-    public interface IQuery : IMessage { }
+    public interface IQuery : IMessage
+    {
+        public string ConnectionId { get; init; }
+    }
 }
