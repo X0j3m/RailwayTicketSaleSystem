@@ -4,14 +4,23 @@ import type {TrainStation} from "../../../data/trainStations.ts";
 interface TrainConnectionBlockProps {
     trainConnection: TrainConnection;
     trainStations: TrainStation[];
+    setSelectedTrainConnection: React.Dispatch<React.SetStateAction<TrainConnection | null>>;
 }
 
-function TrainConnectionBlock({ trainConnection, trainStations }: TrainConnectionBlockProps) {
+function TrainConnectionBlock({ trainConnection, trainStations, setSelectedTrainConnection }: TrainConnectionBlockProps) {
+    function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
+        e.preventDefault();
+        setSelectedTrainConnection(trainConnection);
+    }
+
     return (
         <div>
             Train Connection
             <br/>
-            <button>See available seats</button>
+            <button type='button'
+                    onClick={handleClick}>
+                See route
+            </button>
             <br/>Departure:
             {trainConnection.DepartureTime}
             <br/>Arrival:

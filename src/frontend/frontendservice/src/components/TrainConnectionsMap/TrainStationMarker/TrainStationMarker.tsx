@@ -19,12 +19,12 @@ function TrainStationMarker({station, startStationId, endStationId, setContextMe
     const [isOpen, setIsOpen] = useState(false);
 
     const handleMouseOver = () => {
-        console.log("Setting isOpen to %s", isOpen ? "false" : "true");
+        // console.log("Setting isOpen to %s", isOpen ? "false" : "true");
         setIsOpen(true);
     }
 
     const handleMouseOut = () => {
-        console.log("Setting isOpen to %s", isOpen ? "false" : "true");
+        // console.log("Setting isOpen to %s", isOpen ? "false" : "true");
         setIsOpen(false);
     }
 

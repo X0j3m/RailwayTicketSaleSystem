@@ -9,6 +9,8 @@ import type {TrainStation} from "../../data/trainStations.ts";
 import {useState} from "react";
 import TrainStationContextMenu, {type ContextMenuState} from "./TrainStationContextMenu/TrainStationContextMenu.tsx";
 import type {EndStationState, StartStationState} from "../TrainConnections/TrainConnections.tsx";
+import type {TrainConnection} from "../../data/trainConnection.ts";
+import TrainConnectionRouteLine from "./TrainConnectionRouteLine/TrainConnectionRouteLine.tsx";
 
 const mapCenter: [number, number] = [52.0689, 19.4797];
 const mapBounds = L.latLngBounds(
@@ -22,7 +24,7 @@ L.Icon.Default.mergeOptions({
     shadowUrl: markerShadow,
 });
 
-function MapClickHandler({ onMapClick }: { onMapClick: (state: ContextMenuState | null) => void }) {
+function MapClickHandler({onMapClick}: { onMapClick: (state: ContextMenuState | null) => void }) {
     useMapEvents({
         click() {
             onMapClick(null);
@@ -39,9 +41,15 @@ interface TrainConnectionsMapProps {
     trainStations: TrainStation[];
     startStationState: StartStationState;
     endStationState: EndStationState;
+    selectedTrainConnection: TrainConnection | null;
 }
 
-function TrainConnectionsMap({trainStations, startStationState, endStationState}: TrainConnectionsMapProps) {
+function TrainConnectionsMap({
+                                 trainStations,
+                                 startStationState,
+                                 endStationState,
+                                 selectedTrainConnection
+                             }: TrainConnectionsMapProps) {
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
     const [startStationId, setStartStationId] = startStationState;
     const [endStationId, setEndStationId] = endStationState;
@@ -57,7 +65,7 @@ function TrainConnectionsMap({trainStations, startStationState, endStationState}
                 maxBoundsViscosity={1.0}
                 style={{height: "80vh", width: "100%"}}
             >
-                <MapClickHandler onMapClick={setContextMenu} />
+                <MapClickHandler onMapClick={setContextMenu}/>
                 <TileLayer
                     url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -72,11 +80,16 @@ function TrainConnectionsMap({trainStations, startStationState, endStationState}
                         setContextMenu={setContextMenu}
                     />
                 ))}
+
+            {selectedTrainConnection && <TrainConnectionRouteLine
+                trainStations={trainStations}
+                trainConnection={selectedTrainConnection}
+            />}
             </MapContainer>
 
             {contextMenu && <TrainStationContextMenu
                 contextMenuState={[contextMenu, setContextMenu]}
-                trainStation={trainStations.find(s => s.id==contextMenu.markerId)}
+                trainStation={trainStations.find(s => s.id == contextMenu.markerId)}
                 setStartStation={setStartStationId}
                 setEndStation={setEndStationId}
             />}

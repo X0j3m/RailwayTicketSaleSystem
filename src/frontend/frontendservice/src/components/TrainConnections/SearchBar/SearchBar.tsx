@@ -11,7 +11,7 @@ import type {EndStationState, StartStationState} from "../TrainConnections.tsx";
 
 export interface SearchConnectionProps {
     trainStations: Array<TrainStation>;
-    setTrainConnections: React.Dispatch<React.SetStateAction<TrainConnection[]>>;
+    setTrainConnections: React.Dispatch<React.SetStateAction<TrainConnection[] | null>>;
     startStationState: StartStationState;
     endStationState: EndStationState;
 }
@@ -69,7 +69,7 @@ function SearchBar({trainStations, setTrainConnections, startStationState, endSt
 
     const handleClick = () => {
         if (!connection || !startStationId || !endStationId) return;
-        setTrainConnections([]);
+        setTrainConnections(null);
         if (connection.state === "Connected") {
             sendTrainConnectionsQuery(
                 connection,

@@ -1,0 +1,14 @@
+.container {
+    display: flex;
+    gap: 20px;
+}
+
+.box_left {
+    flex: 2;
+    padding: 20px;
+}
+
+.box_right {
+    flex: 1;
+    padding: 20px;
+}
