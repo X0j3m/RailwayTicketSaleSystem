@@ -58,8 +58,8 @@ function TrainConnectionsMap({
         <>
             <MapContainer
                 center={mapCenter}
-                zoom={7}
-                minZoom={7}
+                zoom={6}
+                minZoom={6}
                 maxZoom={18}
                 maxBounds={mapBounds}
                 maxBoundsViscosity={1.0}

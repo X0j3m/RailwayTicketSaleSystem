@@ -23,8 +23,6 @@ interface TrainConnectionRouteLineProps {
 }
 
 function TrainConnectionRouteLine({trainStations, trainConnection}: TrainConnectionRouteLineProps) {
-    console.log(trainConnection);
-
     const routeLineTuples: RouteLineTuple[] = [];
 
     let transitNumber = 0;

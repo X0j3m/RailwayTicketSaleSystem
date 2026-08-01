@@ -25,6 +25,7 @@ namespace WebAPI.Hubs
             var messageType = message.GetType();
             string messageJson = JsonSerializer.Serialize(message, messageType);
             _logger.LogInformation($"Created JSON of {messageType} type for connectionId={connectionId}");
+            //_logger.LogInformation($"{messageJson}");
             await _hubContext.Clients.Client(connectionId).SendAsync(methodName, messageJson);
         }
     }

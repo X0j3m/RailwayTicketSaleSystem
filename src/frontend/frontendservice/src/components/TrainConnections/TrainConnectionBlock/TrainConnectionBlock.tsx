@@ -1,5 +1,7 @@
-import type {TrainConnection} from "../../../data/trainConnection.ts";
+import type {TrainConnection, Transit} from "../../../data/trainConnection.ts";
 import type {TrainStation} from "../../../data/trainStations.ts";
+import {sendAvailableSeatsQuery} from "../../../utils/UseAvailableSeats.ts";
+import {useSignalR} from "../../../hooks/useSignalR.ts";
 
 interface TrainConnectionBlockProps {
     trainConnection: TrainConnection;
@@ -7,10 +9,28 @@ interface TrainConnectionBlockProps {
     setSelectedTrainConnection: React.Dispatch<React.SetStateAction<TrainConnection | null>>;
 }
 
-function TrainConnectionBlock({ trainConnection, trainStations, setSelectedTrainConnection }: TrainConnectionBlockProps) {
-    function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
+function TrainConnectionBlock({trainConnection, trainStations, setSelectedTrainConnection}: TrainConnectionBlockProps) {
+    const {connection} = useSignalR();
+
+    function handleRouteClick(e: React.MouseEvent<HTMLButtonElement>) {
         e.preventDefault();
         setSelectedTrainConnection(trainConnection);
+    }
+
+    function handleSeatsClick(e: React.MouseEvent<HTMLButtonElement>) {
+        if (!connection || !trainConnection || !trainConnection.Transits) return;
+
+        e.preventDefault();
+
+        trainConnection.Transits.forEach((transit: Transit) => {
+            sendAvailableSeatsQuery(
+                connection,
+                transit.TrainCompositionId,
+                transit.FromStationId,
+                transit.ToStationId,
+                ''
+            )
+        });
     }
 
     return (
@@ -18,8 +38,12 @@ function TrainConnectionBlock({ trainConnection, trainStations, setSelectedTrain
             Train Connection
             <br/>
             <button type='button'
-                    onClick={handleClick}>
+                    onClick={handleRouteClick}>
                 See route
+            </button>
+            <button type='button'
+                    onClick={handleSeatsClick}>
+                See available seats
             </button>
             <br/>Departure:
             {trainConnection.DepartureTime}

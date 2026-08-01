@@ -7,6 +7,6 @@ namespace Models.Dto
         public int Number { get; init; }
         public int XPosition { get; init; }
         public int YPosition { get; init; }
-        public bool Ocupied { get; init; } = false;
+        public bool Occupied { get; init; } = false;
     }
 }

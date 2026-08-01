@@ -13,6 +13,7 @@ namespace Contracts.Messages.Backend.Query
         public Guid TrainCompositionId { get; init; }
         public Guid StartStation { get; init; }
         public Guid EndStation { get; init; }
+        public required string DepartureDate { get; init; }
     }
     public record GetTrainConnectionsQuery : IQuery
     {

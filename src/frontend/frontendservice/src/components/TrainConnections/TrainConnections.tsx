@@ -24,7 +24,7 @@ function TrainConnections() {
 
     const trainStations = useTrainStations();
 
-    console.log(trainStations);
+    // console.log(trainStations);
 
     return (
         <>

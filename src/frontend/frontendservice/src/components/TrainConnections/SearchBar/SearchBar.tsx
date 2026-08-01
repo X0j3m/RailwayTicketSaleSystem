@@ -4,7 +4,7 @@ import {useSignalR} from "../../../hooks/useSignalR.ts";
 import type {
     TrainConnection,
     TransferDetail,
-    TrainConnectionsMessage
+    TrainConnectionsMessage, Transit
 } from "../../../data/trainConnection.ts";
 import type {TrainStation} from "../../../data/trainStations.ts";
 import type {EndStationState, StartStationState} from "../TrainConnections.tsx";
@@ -39,7 +39,13 @@ function SearchBar({trainStations, setTrainConnections, startStationState, endSt
                     DepartureTime: conn?.DepartureTime,
                     ArrivalTime: conn?.ArrivalTime,
                     TotalTripTime: conn?.TotalTripTime,
-                    RelationTypes: conn?.RelationTypes,
+                    Transits: (conn?.Transits || []).map((transit: Transit) => ({
+                        FromStationId: transit?.FromStationId,
+                        ToStationId: transit?.ToStationId,
+                        ArrivalTime: transit?.ArrivalTime,
+                        DepartureTime: transit?.DepartureTime,
+                        TrainCompositionId: transit?.TrainCompositionId
+                    })) || [],
                     TransferDetails: (conn?.TransferDetails || []).map((detail: TransferDetail) => ({
                         StationId: detail?.StationId,
                         ArrivalTime: detail?.ArrivalTime,

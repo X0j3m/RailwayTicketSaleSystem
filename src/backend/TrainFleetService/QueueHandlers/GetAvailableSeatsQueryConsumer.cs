@@ -1,63 +1,42 @@
 ﻿using Contracts.Messages.Backend.Query;
 using MassTransit;
-using Models.Dto;
+using TrainFleetService.Service;
 
 namespace TrainFleetService.QueueHandler
 {
     internal class GetAvailableSeatsQueryConsumer : IConsumer<GetAvailableSeatsQuery>
     {
         private readonly ILogger<GetAvailableSeatsQueryConsumer> _logger;
+        private readonly FleetService _fleetService;
         private readonly IPublishEndpoint _endpoint;
 
-        public GetAvailableSeatsQueryConsumer(ILogger<GetAvailableSeatsQueryConsumer> logger, IPublishEndpoint endpoint)
+        public GetAvailableSeatsQueryConsumer(ILogger<GetAvailableSeatsQueryConsumer> logger, FleetService fleetService, IPublishEndpoint endpoint)
         {
             _logger = logger;
             _endpoint = endpoint;
+            _fleetService = fleetService;
         }
 
         public async Task Consume(ConsumeContext<GetAvailableSeatsQuery> context)
         {
             var message = context.Message;
             var connectionId = message.ConnectionId;
-            _logger.LogInformation("Received GetAvailableSeatsQuery: TrainCompositionId={TrainCompositionId}, StartStation={StartStation}, EndStation={EndStation}",
-                message.TrainCompositionId, message.StartStation, message.EndStation);
 
-            await Task.Delay(3000);
+            var trainCompositionId = message.TrainCompositionId;
+            var startStation = message.StartStation;
+            var endStation = message.EndStation;
+            var departureDate = message.DepartureDate;
+
+            _logger.LogInformation($"Received GetAvailableSeatsQuery: TrainCompositionId={trainCompositionId}, StartStation={startStation}, EndStation={endStation}, DepartureDate={departureDate}");
+
+            var response = await _fleetService.GetTrainCompositionAsync(trainCompositionId, startStation, endStation);
 
             await _endpoint.Publish(new AvailableSeatsQueryResponse
             {
                 ConnectionId = connectionId,
-                Train = new TrainCompositionDto
-                {
-                    TrainType = "Sample Train Type",
-                    TrainNumber = 123,
-                    Cars = new List<CarDto>
-                    {
-                        new CarDto
-                        {
-                            Number = 1,
-                            Seats = new List<SeatDto>
-                            {
-                                new SeatDto { Number = 1, XPosition = 0, YPosition = 0, Ocupied = false },
-                                new SeatDto { Number = 2, XPosition = 1, YPosition = 0, Ocupied = true },
-                                new SeatDto { Number = 3, XPosition = 0, YPosition = 1, Ocupied = false },
-                                new SeatDto { Number = 4, XPosition = 1, YPosition = 1, Ocupied = true }
-                            }
-                        },
-                        new CarDto
-                        {
-                            Number = 2,
-                            Seats = new List<SeatDto>
-                            {
-                                new SeatDto { Number = 1, XPosition = 0, YPosition = 0, Ocupied = true },
-                                new SeatDto { Number = 2, XPosition = 1, YPosition = 0, Ocupied = false },
-                                new SeatDto { Number = 3, XPosition = 0, YPosition = 1, Ocupied = true },
-                                new SeatDto { Number = 4, XPosition = 1, YPosition = 1, Ocupied = true }
-                            }
-                        }
-                    }
-                }
+                Train = response
             });
+
             _logger.LogInformation($"Published response for query: {message.GetType().Name}");
         }
     }

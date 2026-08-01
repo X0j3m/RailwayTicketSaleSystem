@@ -53,6 +53,8 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
+
+
 builder.Services.AddScoped<QuerySender>();
 builder.Services.AddScoped<CommandSender>();
 

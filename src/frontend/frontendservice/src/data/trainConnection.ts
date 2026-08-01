@@ -2,7 +2,7 @@ export interface TrainConnection {
     DepartureTime?: string;
     ArrivalTime?: string;
     TotalTripTime?: number;
-    RelationTypes?: string[];
+    Transits?: Transit[];
     TransferDetails?: TransferDetail[];
     NumOfTransfers: number;
     StationIds?: string[];
@@ -10,10 +10,18 @@ export interface TrainConnection {
 }
 
 export interface TransferDetail {
-    StationId?: string;
-    ArrivalTime?: string;
-    DepartureTime?: string;
-    TransferTime?: number;
+    StationId: string;
+    ArrivalTime: string;
+    DepartureTime: string;
+    TransferTime: number;
+}
+
+export interface Transit {
+    FromStationId: string
+    ToStationId: string
+    ArrivalTime: string
+    DepartureTime: string
+    TrainCompositionId: string
 }
 
 export interface TrainConnectionsMessage {
