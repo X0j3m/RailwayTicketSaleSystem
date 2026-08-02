@@ -94,10 +94,10 @@ function TrainScheme({trainStations}: TrainSchemeProps) {
 
         for (const [, seat] of selectedSeats) {
             if (seat == null) {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     return (
@@ -132,6 +132,22 @@ function TrainScheme({trainStations}: TrainSchemeProps) {
                             </div>
                         );
                     })}
+
+                    <h2>
+                        Active train composition:
+                        &nbsp;
+                        {activeTrainComposition &&
+                            <>
+                                <span>
+                                    {trainStations.find(s => s.id === activeTrainComposition.StartStationId)?.name}
+                                </span>
+                                &nbsp;&rarr;&nbsp;
+                                <span>
+                                    {trainStations.find(s => s.id === activeTrainComposition.EndStationId)?.name}
+                                </span>
+                            </>
+                        }
+                    </h2>
 
                     <br/>
                     {activeTrainComposition && <button className="locomotive" disabled>Train</button>}

@@ -69,13 +69,13 @@
 }
 
 .seat.occupied {
-    background-color: #fee2e2;
-    color: #991b1b;
+    background-color: #d1d1d1;
+    color: #555555;
     cursor: not-allowed;
 }
 
 .seat.selected {
-    background-color: #baebff;
-    color: #099be8;
+    background-color: #ffd8b0;
+    color: #a35700;
     cursor: pointer;
 }

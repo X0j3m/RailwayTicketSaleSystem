@@ -47,7 +47,7 @@ namespace TrainFleetService.Service
                     Number = trainSeat.SeatNumber,
                     XPosition = trainSeat.SeatXPos,
                     YPosition = trainSeat.SeatYPos,
-                    Occupied = false
+                    Occupied = Random.Shared.NextDouble() > 0.5 ? true : false
                 });
             }
 
