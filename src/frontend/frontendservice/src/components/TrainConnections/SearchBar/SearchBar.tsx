@@ -1,22 +1,27 @@
-import {useEffect, useState} from "react";
-import {sendTrainConnectionsQuery} from "../../../utils/UseTrainConnections.ts";
+import {useState} from "react";
 import {useSignalR} from "../../../hooks/useSignalR.ts";
 import type {
     TrainConnection,
-    TransferDetail,
-    TrainConnectionsMessage, Transit
+    TrainConnectionQuery
 } from "../../../data/trainConnection.ts";
 import type {TrainStation} from "../../../data/trainStations.ts";
 import type {EndStationState, StartStationState} from "../TrainConnections.tsx";
 
 export interface SearchConnectionProps {
+    setTrainConnectionsQuery: React.Dispatch<React.SetStateAction<TrainConnectionQuery | null>>;
     trainStations: Array<TrainStation>;
     setTrainConnections: React.Dispatch<React.SetStateAction<TrainConnection[] | null>>;
     startStationState: StartStationState;
     endStationState: EndStationState;
 }
 
-function SearchBar({trainStations, setTrainConnections, startStationState, endStationState}: SearchConnectionProps) {
+function SearchBar({
+                       setTrainConnectionsQuery,
+                       trainStations,
+                       setTrainConnections,
+                       startStationState,
+                       endStationState
+                   }: SearchConnectionProps) {
     const {connection} = useSignalR();
 
     const [startStationId,] = startStationState;
@@ -28,76 +33,33 @@ function SearchBar({trainStations, setTrainConnections, startStationState, endSt
     }));
     const [departureDate, setDepartureDate] = useState(new Date().toISOString().split('T')[0]);
 
-    useEffect(() => {
-        if (!connection) return;
-
-        const handleReceiveConnections = (data: string) => {
-            try {
-                const rawData: TrainConnectionsMessage = JSON.parse(data);
-
-                const parsedData: TrainConnection[] = rawData?.MessageItems?.map((conn: TrainConnection) => ({
-                    DepartureTime: conn?.DepartureTime,
-                    ArrivalTime: conn?.ArrivalTime,
-                    TotalTripTime: conn?.TotalTripTime,
-                    Transits: (conn?.Transits || []).map((transit: Transit) => ({
-                        FromStationId: transit?.FromStationId,
-                        ToStationId: transit?.ToStationId,
-                        ArrivalTime: transit?.ArrivalTime,
-                        DepartureTime: transit?.DepartureTime,
-                        TrainCompositionId: transit?.TrainCompositionId
-                    })) || [],
-                    TransferDetails: (conn?.TransferDetails || []).map((detail: TransferDetail) => ({
-                        StationId: detail?.StationId,
-                        ArrivalTime: detail?.ArrivalTime,
-                        DepartureTime: detail?.DepartureTime,
-                        TransferTime: detail?.TransferTime,
-                    })) || [],
-                    NumOfTransfers: conn?.NumOfTransfers,
-                    StationIds: conn?.StationIds,
-                    TrainCompositionIds: conn?.TrainCompositionIds
-                })) || [];
-
-                if (setTrainConnections) {
-                    setTrainConnections(parsedData);
-                }
-
-            } catch (error) {
-                console.error("Error parsing stations:", error);
-            }
-        };
-
-        connection.on("ReceiveTrainConnectionsQueryResponse", handleReceiveConnections);
-
-        return () => {
-            connection.off("ReceiveTrainConnectionsQueryResponse", handleReceiveConnections);
-        };
-    }, [connection, setTrainConnections]);
-
     const handleClick = () => {
         if (!connection || !startStationId || !endStationId) return;
+
         setTrainConnections(null);
-        if (connection.state === "Connected") {
-            sendTrainConnectionsQuery(
-                connection,
-                startStationId,
-                endStationId,
-                departureDate,
-                departureTime
-            );
+
+        const trainConnectionsQuery: TrainConnectionQuery = {
+            StartStation: startStationId,
+            EndStation: endStationId,
+            DepartureDate: departureDate,
+            DepartureTime: departureTime,
+            PageNumber: 0,
+            PageSize: 8
         }
+        setTrainConnectionsQuery(trainConnectionsQuery);
     };
 
-    const startStatinName = trainStations.find(s => s.id === startStationId)?.name ?? 'Start station';
-    const endStatinName = trainStations.find(s => s.id === endStationId)?.name ?? 'End station';
+    const startStationName = trainStations.find(s => s.id === startStationId)?.name ?? 'Start station';
+    const endStationName = trainStations.find(s => s.id === endStationId)?.name ?? 'End station';
 
     return (
         <form onSubmit={(e) => {
             e.preventDefault();
             handleClick();
         }}>
-            <span>{startStatinName}</span>
+            <span>{startStationName}</span>
             &nbsp;
-            <span>{endStatinName}</span>
+            <span>{endStationName}</span>
             &nbsp;
             <input
                 value={departureTime}

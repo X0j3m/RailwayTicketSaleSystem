@@ -22,7 +22,7 @@ namespace WebAPI.Messaging.Consumers.Query
         {
             var response = context.Message;
             var connectionId = response.ConnectionId;
-            _logger.LogInformation($"Recived StationsQueryResponse for connectionId={connectionId}");
+            _logger.LogInformation($"Received StationsQueryResponse for connectionId={connectionId}");
             var message = new StationsMessage { ConnectionId = connectionId, MessageItems = response.Stations };
             await _messageDispatcher.Dispatch("ReceiveStationsQueryResponse", message);
             await Task.CompletedTask;

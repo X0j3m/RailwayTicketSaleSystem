@@ -25,8 +25,10 @@ class TicketSegments(SQLModel, table=True):
                                  index=True,
                                  nullable=False)
     ticket_id: Optional[uuid.UUID] = Field(foreign_key="Tickets.id")
+    segment_number: int
     train_composition_id: uuid.UUID
     car_number: int
     seat_number: int
     start_station_id: uuid.UUID
     end_station_id: uuid.UUID
+    departure_date: str

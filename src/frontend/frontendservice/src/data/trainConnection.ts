@@ -26,5 +26,17 @@ export interface Transit {
 
 export interface TrainConnectionsMessage {
     ConnectionId?: string;
+    NumberOfPages: number;
+    PageNumber: number;
+    PageSize: number;
     MessageItems?: TrainConnection[];
+}
+
+export interface TrainConnectionQuery {
+    StartStation: string,
+    EndStation: string,
+    DepartureDate: string,
+    DepartureTime: string,
+    PageNumber: number,
+    PageSize: number
 }

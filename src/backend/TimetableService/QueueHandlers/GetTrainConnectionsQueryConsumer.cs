@@ -1,6 +1,7 @@
 ﻿using Contracts.Messages.Backend.Query;
 using MassTransit;
 using TimetableService.Services;
+using TimetableService.Models;
 
 namespace TimetableService.QueueHandler
 {
@@ -29,21 +30,28 @@ namespace TimetableService.QueueHandler
             var targetStationId = message.EndStation.ToString();
             var departureTime = message.DepartureTime;
             var departureDate = message.DepartureDate;
+            var pageSize = message.PageSize;
+            var pageNumber = message.PageNumber;
 
             _logger.LogInformation($"Received GetTrainConnectionsQuery: ConnectionId={connectionId}, StartStation={sourceStationId}, EndStation={targetStationId}, DepartureTime={departureTime}, DepartureDate={departureDate}");
 
-            var results = await _scheduleService.GetTrainConnections(
-                sourceStationId,
-                targetStationId,
-                departureDate,
-                departureTime,
-                6 * 60,
-                5);
+            var searchCriteria = new TrainSearchCriteria
+            {
+                SourceStationId = sourceStationId,
+                TargetStationId = targetStationId,
+                DepartureDate = departureDate,
+                DepartureTime = departureTime,
+                MaxNumOfTransfers = 5,
+                PageSize = pageSize,
+                PageNumber = pageNumber
+            };
+
+            var resultsPage = await _scheduleService.GetTrainConnections(searchCriteria);
 
             await _endpoint.Publish(new TrainConnectionsQueryResponse
             {
                 ConnectionId = connectionId,
-                Connections = results
+                ConnectionsPage = resultsPage
             });
             _logger.LogInformation($"Published response for {message.GetType().Name} connectionId={connectionId}");
         }

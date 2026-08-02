@@ -2,6 +2,7 @@ import type {TrainConnection, Transit} from "../../../data/trainConnection.ts";
 import type {TrainStation} from "../../../data/trainStations.ts";
 import {sendAvailableSeatsQuery} from "../../../utils/UseAvailableSeats.ts";
 import {useSignalR} from "../../../hooks/useSignalR.ts";
+import type {AvailableSeatsMessage} from "../../../data/TrainComposition.ts";
 
 interface TrainConnectionBlockProps {
     trainConnection: TrainConnection;
@@ -12,52 +13,47 @@ interface TrainConnectionBlockProps {
 function TrainConnectionBlock({trainConnection, trainStations, setSelectedTrainConnection}: TrainConnectionBlockProps) {
     const {connection} = useSignalR();
 
-    function handleRouteClick(e: React.MouseEvent<HTMLButtonElement>) {
-        e.preventDefault();
-        setSelectedTrainConnection(trainConnection);
-    }
-
     function handleSeatsClick(e: React.MouseEvent<HTMLButtonElement>) {
         if (!connection || !trainConnection || !trainConnection.Transits) return;
 
         e.preventDefault();
 
+        const args: AvailableSeatsMessage[] = []
+
         trainConnection.Transits.forEach((transit: Transit) => {
-            sendAvailableSeatsQuery(
-                connection,
-                transit.TrainCompositionId,
-                transit.FromStationId,
-                transit.ToStationId,
-                ''
-            )
+            const availableSeatsMessage: AvailableSeatsMessage = {
+                trainCompositionId: transit.TrainCompositionId,
+                startStation: transit.FromStationId,
+                endStation: transit.ToStationId,
+                departureDate: ''
+            }
+
+            args.push(availableSeatsMessage)
         });
+
+        sendAvailableSeatsQuery(connection, args)
     }
 
     return (
-        <div>
-            Train Connection
-            <br/>
-            <button type='button'
-                    onClick={handleRouteClick}>
-                See route
-            </button>
+        <div
+            style={{userSelect: "none", border: "2px solid black"}}
+            onMouseEnter={() => setSelectedTrainConnection(trainConnection)}
+            onMouseLeave={() => setSelectedTrainConnection(null)}>
             <button type='button'
                     onClick={handleSeatsClick}>
                 See available seats
             </button>
-            <br/>Departure:
-            {trainConnection.DepartureTime}
-            <br/>Arrival:
-            {trainConnection.ArrivalTime}
-            <br/>Train changes:
-            {trainConnection.NumOfTransfers}
-            <br/>Segments:
-            <ul>
-                {trainConnection.StationIds?.map((s: string) => {
-                    const station = trainStations.find(station => station.id == s);
-                    return (<li>{station?.name}</li>);
-                })}
-            </ul>
+            {trainConnection.Transits?.map((transit: Transit) => {
+                const fromStation = trainStations.find(station => station.id == transit.FromStationId);
+                const toStation = trainStations.find(station => station.id == transit.ToStationId);
+                return (
+                    <>
+                        <br/>
+                        <span>
+                            {fromStation?.name} ({transit.DepartureTime}) &rarr; {toStation?.name} ({transit.ArrivalTime})
+                        </span>
+                    </>);
+            })}
         </div>);
 }
 

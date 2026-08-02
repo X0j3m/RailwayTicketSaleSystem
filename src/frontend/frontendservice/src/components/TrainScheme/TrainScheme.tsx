@@ -1,9 +1,26 @@
+import './TrainScheme.css';
 import {useSignalR} from "../../hooks/useSignalR.ts";
-import {useEffect} from "react";
-import type {Car, TrainComposition, TrainCompositionsMessage} from "../../data/TrainComposition.ts";
+import {useEffect, useState} from "react";
+import type {Car, Seat, TrainComposition, TrainCompositionsMessage} from "../../data/TrainComposition.ts";
+import type {TrainStation} from "../../data/trainStations.ts";
 
-function TrainScheme() {
+interface SelectedSeat {
+    Car: number | null;
+    Seat: number | null;
+}
+
+export interface TrainSchemeProps {
+    trainStations: Array<TrainStation>;
+}
+
+function TrainScheme({trainStations}: TrainSchemeProps) {
     const {connection} = useSignalR();
+    const [showed, setShowed] = useState<boolean>(false);
+    const [trainCompositions, setTrainCompositions] = useState<TrainComposition[]>([]);
+
+    const [activeTrainComposition, setActiveTrainComposition] = useState<TrainComposition | null>(null);
+    const [activeCarNumber, setActiveCarNumber] = useState<number | null>(null);
+    const [selectedSeats, setSelectedSeats] = useState<Map<string, SelectedSeat | null>>(new Map());
 
     useEffect(() => {
         if (!connection) return;
@@ -24,7 +41,19 @@ function TrainScheme() {
                     })) || [],
                 })) || [];
 
-                console.log(parsedData);
+                if (parsedData.length > 0) {
+                    setShowed(true);
+                    setTrainCompositions(parsedData);
+                    setActiveTrainComposition(parsedData[0]);
+                    setActiveCarNumber(0);
+
+                    const selectedSeatsMap = new Map<string, SelectedSeat | null>();
+                    parsedData.forEach((composition: TrainComposition) => {
+                        selectedSeatsMap.set(composition.TrainCompositionId, null);
+                    });
+
+                    setSelectedSeats(selectedSeatsMap);
+                }
 
             } catch (error) {
                 console.error("Error parsing stations:", error);
@@ -35,13 +64,126 @@ function TrainScheme() {
 
         return () => {
             connection.off("ReceiveAvailableSeatsQueryResponse", handleReceiveAvailableSeats);
-        }
+        };
     }, [connection]);
 
+    function onTrainCompositionClick(composition: TrainComposition) {
+        if (activeTrainComposition == composition) {
+            return;
+        }
+
+        setActiveTrainComposition(composition);
+        setActiveCarNumber(0);
+    }
+
+    function onSeatClick(trainCompositionId: string, carNumber: number, seatNumber: number) {
+        const selectedSeat: SelectedSeat = {
+            Car: carNumber + 1,
+            Seat: seatNumber
+        };
+
+        setSelectedSeats(prevMap => {
+            const newMap = new Map(prevMap);
+            newMap.set(trainCompositionId, selectedSeat);
+            return newMap;
+        });
+    }
+
+    function isCheckoutDisabled() {
+        if (!selectedSeats || selectedSeats.size === 0) return true;
+
+        for (const [, seat] of selectedSeats) {
+            if (seat == null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     return (
-        <div>
-            TrainScheme
-        </div>
+        <>
+            {showed && (
+                <div className="top-centered-div">
+                    <button
+                        onClick={() => setShowed(false)}>
+                        X
+                    </button>
+                    <br/>
+                    <br/>
+                    <br/>
+                    <br/>
+
+                    {trainCompositions.map((composition: TrainComposition) => {
+                        const startStation = trainStations.find(s => s.id === composition.StartStationId);
+                        const endStation = trainStations.find(s => s.id === composition.EndStationId);
+                        const seatInfo = selectedSeats?.get(composition.TrainCompositionId);
+
+                        return (
+                            <div key={composition.TrainCompositionId}>
+                                <button onClick={() => onTrainCompositionClick(composition)}>
+                                    {startStation?.name} &rarr; {endStation?.name}
+                                </button>
+                                {seatInfo && (
+                                    <span>
+                                        Car: {seatInfo.Car} Seat: {seatInfo.Seat}
+                                    </span>
+                                )}
+                                <br/>
+                            </div>
+                        );
+                    })}
+
+                    <br/>
+                    {activeTrainComposition && <button className="locomotive" disabled>Train</button>}
+                    {activeTrainComposition &&
+                        activeTrainComposition.Cars.map((car: Car) => (
+                            <button
+                                key={car.Number}
+                                className={activeCarNumber === car.Number - 1 ? "car active" : "car"}
+                                onClick={() => setActiveCarNumber(car.Number - 1)}>
+                                Car {car.Number}
+                            </button>
+                        ))
+                    }
+
+                    <br/>
+                    <div className="seat-map">
+                        {activeCarNumber !== null && activeTrainComposition && (() => {
+                            const currentSelected = selectedSeats.get(activeTrainComposition.TrainCompositionId);
+
+                            return activeTrainComposition.Cars[activeCarNumber]?.Seats.map((seat: Seat) => {
+                                const isSelected = currentSelected?.Car === activeCarNumber + 1 && currentSelected?.Seat === seat.Number;
+
+                                const seatStatusClass = seat.Occupied
+                                    ? "occupied"
+                                    : (isSelected ? "selected" : "available");
+
+                                return (
+                                    <button
+                                        key={seat.Number}
+                                        className={`seat ${seatStatusClass}`}
+                                        style={{
+                                            gridColumn: seat.XPosition + 1,
+                                            gridRow: seat.YPosition >= 2 ? seat.YPosition + 2 : seat.YPosition + 1
+                                        }}
+                                        disabled={seat.Occupied}
+                                        onClick={() => onSeatClick(activeTrainComposition.TrainCompositionId, activeCarNumber, seat.Number)}
+                                    >
+                                        {seat.Number}
+                                    </button>
+                                );
+                            });
+                        })()}
+                    </div>
+
+                    {activeTrainComposition && (
+                        <button disabled={isCheckoutDisabled()}>
+                            Checkout
+                        </button>
+                    )}
+                </div>
+            )}
+        </>
     );
 }
 

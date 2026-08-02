@@ -19,8 +19,14 @@ export interface Seat {
     YPosition: number
 }
 
-
 export interface TrainCompositionsMessage {
     ConnectionId?: string;
     MessageItems?: TrainComposition[];
+}
+
+export interface AvailableSeatsMessage {
+    trainCompositionId: string,
+    startStation: string,
+    endStation: string,
+    departureDate: string
 }

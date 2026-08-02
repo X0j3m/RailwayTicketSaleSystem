@@ -1,5 +1,6 @@
 ﻿using Contracts.Messages.Backend.Query;
 using MassTransit;
+using Models.Dto;
 using TrainFleetService.Service;
 
 namespace TrainFleetService.QueueHandler
@@ -21,20 +22,30 @@ namespace TrainFleetService.QueueHandler
         {
             var message = context.Message;
             var connectionId = message.ConnectionId;
+            var trainCompositionQueries = message.TrainCompositionAvailableSeatsQueries;
 
-            var trainCompositionId = message.TrainCompositionId;
-            var startStation = message.StartStation;
-            var endStation = message.EndStation;
-            var departureDate = message.DepartureDate;
+            _logger.LogInformation($"Received GetAvailableSeatsQuery: ConnectionId={connectionId}, Number of trains={trainCompositionQueries.Length}");
 
-            _logger.LogInformation($"Received GetAvailableSeatsQuery: TrainCompositionId={trainCompositionId}, StartStation={startStation}, EndStation={endStation}, DepartureDate={departureDate}");
+            var response = new List<TrainCompositionDto>();
 
-            var response = await _fleetService.GetTrainCompositionAsync(trainCompositionId, startStation, endStation);
+            foreach (var query in trainCompositionQueries)
+            {
+                var trainCompositionId = query.TrainCompositionId;
+                var startStation = query.StartStation;
+                var endStation = query.EndStation;
+                var departureDate = query.DepartureDate;
+
+                _logger.LogInformation($"Processing query for ConnectionId={connectionId}: TrainCompositionId={trainCompositionId}, StartStation={startStation}, EndStation={endStation}, DepartureDate={departureDate}");
+
+                var result = await _fleetService.GetTrainCompositionAsync(trainCompositionId, startStation, endStation);
+
+                response.Add(result);
+            }
 
             await _endpoint.Publish(new AvailableSeatsQueryResponse
             {
                 ConnectionId = connectionId,
-                Train = response
+                Trains = response.ToArray()
             });
 
             _logger.LogInformation($"Published response for query: {message.GetType().Name}");

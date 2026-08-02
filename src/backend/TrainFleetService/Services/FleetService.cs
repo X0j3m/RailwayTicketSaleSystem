@@ -44,7 +44,7 @@ namespace TrainFleetService.Service
 
                 cars[trainSeat.CarNumber - 1].Seats.Add(new SeatDto
                 {
-                    Number = trainSeat.CarNumber,
+                    Number = trainSeat.SeatNumber,
                     XPosition = trainSeat.SeatXPos,
                     YPosition = trainSeat.SeatYPos,
                     Occupied = false

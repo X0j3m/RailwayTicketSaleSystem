@@ -1,6 +1,7 @@
 ﻿using Contracts.Messages.Backend.Query;
 using Contracts.Messages.Frontend;
 using MassTransit;
+using Models.Dto;
 using WebAPI.Hubs;
 
 namespace WebAPI.Messaging.Consumers.Query
@@ -22,8 +23,17 @@ namespace WebAPI.Messaging.Consumers.Query
         {
             var response = context.Message;
             var connectionId = response.ConnectionId;
-            _logger.LogInformation($"Recived TrainConnectionsQueryResponse for connectionId={connectionId}");
-            var message = new TrainConnectionsMessage { ConnectionId = connectionId, MessageItems = response.Connections };
+            var trainConnectionsPage = response.ConnectionsPage;
+
+            _logger.LogInformation($"Received TrainConnectionsQueryResponse for connectionId={connectionId}");
+            var message = new TrainConnectionsMessage
+            {
+                ConnectionId = connectionId,
+                NumberOfPages = trainConnectionsPage.NumberOfPages,
+                PageNumber = trainConnectionsPage.PageNumber,
+                PageSize = trainConnectionsPage.PageSize,
+                MessageItems = trainConnectionsPage.Connections,
+            };
             await _messageDispatcher.Dispatch("ReceiveTrainConnectionsQueryResponse", message);
             await Task.CompletedTask;
         }

@@ -1,7 +1,6 @@
 ﻿using Contracts.Messages.Backend.Query;
 using Contracts.Messages.Frontend;
 using MassTransit;
-using Models.Dto;
 using WebAPI.Hubs;
 
 namespace WebAPI.Messaging.Consumers.Query
@@ -23,9 +22,8 @@ namespace WebAPI.Messaging.Consumers.Query
         {
             var response = context.Message;
             var connectionId = response.ConnectionId;
-            List<TrainCompositionDto> messageItems = [response.Train];
-            _logger.LogInformation($"Recived StationsQueryResponse for connectionId={connectionId}");
-            var message = new SeatsMessage { ConnectionId = connectionId, MessageItems = messageItems };
+            _logger.LogInformation($"Received AvailableSeatsQueryResponse for connectionId={connectionId}");
+            var message = new SeatsMessage { ConnectionId = connectionId, MessageItems = response.Trains };
             await _messageDispatcher.Dispatch("ReceiveAvailableSeatsQueryResponse", message);
             await Task.CompletedTask;
         }

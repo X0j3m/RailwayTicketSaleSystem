@@ -12,12 +12,12 @@ namespace Contracts.Messages.Backend.Query
     public record TrainConnectionsQueryResponse : IQueryResponse
     {
         public required string ConnectionId { get; init; }
-        public List<TrainConnectionDto> Connections { get; init; } = new();
+        public required TrainConnectionsDtoPage ConnectionsPage { get; init; }
     }
 
     public record AvailableSeatsQueryResponse : IQueryResponse
     {
         public required string ConnectionId { get; init; }
-        public TrainCompositionDto Train { get; init; } = new();
+        public required TrainCompositionDto[] Trains { get; init; }
     }
 }
