@@ -22,7 +22,11 @@ function SearchBar({
                        startStationState,
                        endStationState
                    }: SearchConnectionProps) {
+    const today: string = new Date().toISOString().split('T')[0];
+
     const {connection} = useSignalR();
+
+    const [minTime, setMinTime] = useState<string>(new Date().toTimeString().slice(0, 5));
 
     const [startStationId,] = startStationState;
     const [endStationId,] = endStationState;
@@ -31,7 +35,7 @@ function SearchBar({
         hour: '2-digit',
         minute: '2-digit',
     }));
-    const [departureDate, setDepartureDate] = useState(new Date().toISOString().split('T')[0]);
+    const [departureDate, setDepartureDate] = useState(today);
 
     const handleClick = () => {
         if (!connection || !startStationId || !endStationId) return;
@@ -49,6 +53,21 @@ function SearchBar({
         setTrainConnectionsQuery(trainConnectionsQuery);
     };
 
+    const handleTimeChange = (selectedTime: string) => {
+        if (selectedTime >= minTime) {
+            setDepartureTime(selectedTime);
+        }
+    }
+
+    const handleDateChange = (selectedDate: string) => {
+        const newMinTime: string = selectedDate == today ? new Date().toTimeString().slice(0, 5) : "00:00";
+        setDepartureDate(selectedDate);
+        setMinTime(newMinTime);
+        if (departureTime < newMinTime) {
+            setDepartureTime(newMinTime);
+        }
+    }
+
     const startStationName = trainStations.find(s => s.id === startStationId)?.name ?? 'Start station';
     const endStationName = trainStations.find(s => s.id === endStationId)?.name ?? 'End station';
 
@@ -63,17 +82,18 @@ function SearchBar({
             &nbsp;
             <input
                 value={departureTime}
-                onChange={(e) => setDepartureTime(e.target.value)}
+                onChange={(e) => handleTimeChange(e.target.value)}
                 type='time'
+                min={minTime}
                 name='departureTime'
             />
             &nbsp;
             <input
                 value={departureDate}
-                onChange={(e) => setDepartureDate(e.target.value)}
+                onChange={(e) => handleDateChange(e.target.value)}
                 type='date'
-                name='departureDate'
-            />
+                min={today}
+                name='departureDate'/>
             &nbsp;
             <button
                 disabled={!departureTime || !departureDate || !startStationId || !endStationId}

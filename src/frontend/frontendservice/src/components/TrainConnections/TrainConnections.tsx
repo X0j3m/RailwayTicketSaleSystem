@@ -114,6 +114,7 @@ function TrainConnections() {
                         {trainConnectionsQuery &&
                             <>
                                 <button
+                                    disabled={trainConnectionsQuery?.DepartureDate == new Date().toISOString().split('T')[0]}
                                     onClick={() => handleChangeDayClick(-1)}>
                                     {format(addDays(parseISO(trainConnectionsQuery?.DepartureDate), -1), 'yyyy-MM-dd')}
                                 </button>
