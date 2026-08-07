@@ -31,7 +31,7 @@ function ConnectionsSearchHandler({
                 trainConnectionsQuery
             );
         }
-    }, [trainConnectionsQuery]);
+    }, [connection, setTrainConnections, trainConnectionsQuery]);
 
     useEffect(() => {
         if (!connection) return;
@@ -41,24 +41,25 @@ function ConnectionsSearchHandler({
                 const rawData: TrainConnectionsMessage = JSON.parse(data);
 
                 const parsedData: TrainConnection[] = rawData?.MessageItems?.map((conn: TrainConnection) => ({
-                    DepartureTime: conn?.DepartureTime,
-                    ArrivalTime: conn?.ArrivalTime,
-                    TotalTripTime: conn?.TotalTripTime,
-                    Transits: (conn?.Transits || []).map((transit: Transit) => ({
-                        FromStationId: transit?.FromStationId,
-                        ToStationId: transit?.ToStationId,
-                        ArrivalTime: transit?.ArrivalTime,
-                        DepartureTime: transit?.DepartureTime,
-                        TrainCompositionId: transit?.TrainCompositionId
+                    DepartureTime: conn.DepartureTime,
+                    ArrivalTime: conn.ArrivalTime,
+                    TotalTripTime: conn.TotalTripTime,
+                    Transits: (conn.Transits || []).map((transit: Transit) => ({
+                        FromStationId: transit.FromStationId,
+                        ToStationId: transit.ToStationId,
+                        ArrivalTime: transit.ArrivalTime,
+                        DepartureTime: transit.DepartureTime,
+                        TravelTime: transit.TravelTime,
+                        TrainCompositionId: transit.TrainCompositionId
                     })) || [],
-                    TransferDetails: (conn?.TransferDetails || []).map((detail: TransferDetail) => ({
-                        StationId: detail?.StationId,
-                        ArrivalTime: detail?.ArrivalTime,
-                        DepartureTime: detail?.DepartureTime,
-                        TransferTime: detail?.TransferTime,
+                    TransferDetails: (conn.TransferDetails || []).map((detail: TransferDetail) => ({
+                        StationId: detail.StationId,
+                        ArrivalTime: detail.ArrivalTime,
+                        DepartureTime: detail.DepartureTime,
+                        TransferTime: detail.TransferTime,
                     })) || [],
-                    NumOfTransfers: conn?.NumOfTransfers,
-                    StationIds: conn?.StationIds,
+                    NumOfTransfers: conn.NumOfTransfers,
+                    StationIds: conn.StationIds,
                     TrainCompositionIds: conn?.TrainCompositionIds
                 })) || [];
 
@@ -67,6 +68,8 @@ function ConnectionsSearchHandler({
                     PageNumber: rawData.PageNumber,
                     PageSize: rawData.PageSize
                 }
+
+                console.log(parsedData);
 
                 if (setTrainConnections && setTrainConnectionsMetadata) {
                     setTrainConnections(parsedData);

@@ -21,6 +21,7 @@ export interface Transit {
     ToStationId: string
     ArrivalTime: string
     DepartureTime: string
+    TravelTime: number
     TrainCompositionId: string
 }
 

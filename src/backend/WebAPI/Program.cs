@@ -1,6 +1,7 @@
 using MassTransit;
 using Scalar.AspNetCore;
 using WebAPI.Hubs;
+using WebAPI.Hubs.Utils;
 using WebAPI.Messaging.Consumers.Command;
 using WebAPI.Messaging.Consumers.Query;
 using WebAPI.Messaging.Senders;
@@ -30,7 +31,6 @@ builder.Services.AddCors(options =>
         });
 });
 
-
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<StationsQueryResponseConsumer>();
@@ -53,12 +53,10 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
-
-
 builder.Services.AddScoped<QuerySender>();
 builder.Services.AddScoped<CommandSender>();
 
-builder.Services.AddScoped<FrontendMessageDispatcher>();
+builder.Services.AddScoped<MessageDispatcher>();
 
 var app = builder.Build();
 
@@ -66,8 +64,7 @@ app.UseCors("SignalRPolicy");
 app.UseRouting();
 app.UseAuthorization();
 
-app.MapHub<QueryHub>("/hub/query");
-app.MapHub<CommandHub>("/hub/command");
+app.MapHub<MessageHub>("/hub/app");
 app.MapControllers();
 
 if (app.Environment.IsDevelopment())

@@ -8,9 +8,10 @@ interface TrainConnectionBlockProps {
     trainConnection: TrainConnection;
     trainStations: TrainStation[];
     setSelectedTrainConnection: React.Dispatch<React.SetStateAction<TrainConnection | null>>;
+    setMouseOverTrainConnection: React.Dispatch<React.SetStateAction<TrainConnection | null>>;
 }
 
-function TrainConnectionBlock({trainConnection, trainStations, setSelectedTrainConnection}: TrainConnectionBlockProps) {
+function TrainConnectionBlock({trainConnection, trainStations, setSelectedTrainConnection, setMouseOverTrainConnection}: TrainConnectionBlockProps) {
     const {connection} = useSignalR();
 
     function handleSeatsClick(e: React.MouseEvent<HTMLButtonElement>) {
@@ -19,6 +20,8 @@ function TrainConnectionBlock({trainConnection, trainStations, setSelectedTrainC
         e.preventDefault();
 
         const args: AvailableSeatsMessage[] = []
+
+        setSelectedTrainConnection(trainConnection);
 
         trainConnection.Transits.forEach((transit: Transit) => {
             const availableSeatsMessage: AvailableSeatsMessage = {
@@ -37,8 +40,8 @@ function TrainConnectionBlock({trainConnection, trainStations, setSelectedTrainC
     return (
         <div
             style={{userSelect: "none", border: "2px solid black"}}
-            onMouseEnter={() => setSelectedTrainConnection(trainConnection)}
-            onMouseLeave={() => setSelectedTrainConnection(null)}>
+            onMouseEnter={() => setMouseOverTrainConnection(trainConnection)}
+            onMouseLeave={() => setMouseOverTrainConnection(null)}>
             <button type='button'
                     onClick={handleSeatsClick}>
                 See available seats

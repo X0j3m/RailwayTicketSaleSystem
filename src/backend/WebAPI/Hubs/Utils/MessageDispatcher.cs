@@ -4,16 +4,16 @@ using Microsoft.AspNetCore.SignalR;
 using System.Text.Json;
 using WebAPI.Messaging.Consumers.Query;
 
-namespace WebAPI.Hubs
+namespace WebAPI.Hubs.Utils
 {
-    public class FrontendMessageDispatcher
+    public class MessageDispatcher
     {
         private readonly ILogger<StationsQueryResponseConsumer> _logger;
-        private readonly IHubContext<QueryHub> _hubContext;
+        private readonly IHubContext<MessageHub> _hubContext;
 
-        public FrontendMessageDispatcher(
+        public MessageDispatcher(
             ILogger<StationsQueryResponseConsumer> logger,
-            IHubContext<QueryHub> hubContext)
+            IHubContext<MessageHub> hubContext)
         {
             _logger = logger;
             _hubContext = hubContext;

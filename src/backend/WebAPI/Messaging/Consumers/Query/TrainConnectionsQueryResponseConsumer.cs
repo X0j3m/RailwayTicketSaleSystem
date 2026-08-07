@@ -2,18 +2,18 @@
 using Contracts.Messages.Frontend;
 using MassTransit;
 using Models.Dto;
-using WebAPI.Hubs;
+using WebAPI.Hubs.Utils;
 
 namespace WebAPI.Messaging.Consumers.Query
 {
     public class TrainConnectionsQueryResponseConsumer : IConsumer<TrainConnectionsQueryResponse>
     {
         private readonly ILogger<TrainConnectionsQueryResponseConsumer> _logger;
-        private readonly FrontendMessageDispatcher _messageDispatcher;
+        private readonly MessageDispatcher _messageDispatcher;
 
         public TrainConnectionsQueryResponseConsumer(
             ILogger<TrainConnectionsQueryResponseConsumer> logger,
-            FrontendMessageDispatcher messageDispatcher)
+            MessageDispatcher messageDispatcher)
         {
             _logger = logger;
             _messageDispatcher = messageDispatcher;

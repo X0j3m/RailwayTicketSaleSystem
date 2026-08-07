@@ -3,15 +3,14 @@ import {HubConnection, HubConnectionBuilder} from '@microsoft/signalr';
 import {SignalRContext} from './SignalRContext';
 
 export const SignalRProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
-    const apiUrl = "http://localhost:5003";
-    const queryHub = "/hub/query";
+    const apiUrl = "http://localhost:5003/hub/app";
 
     const [connection, setConnection] = useState<HubConnection | null>(null);
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
         const newConnection = new HubConnectionBuilder()
-            .withUrl(apiUrl + queryHub)
+            .withUrl(apiUrl)
             .withAutomaticReconnect()
             .build();
 

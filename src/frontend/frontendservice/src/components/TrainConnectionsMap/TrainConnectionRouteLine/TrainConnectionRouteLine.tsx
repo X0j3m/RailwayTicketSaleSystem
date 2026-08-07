@@ -65,7 +65,7 @@ function TrainConnectionRouteLine({trainStations, trainConnection}: TrainConnect
                             positions={[pointA, pointB]}
                             pathOptions={{
                                 color: col,
-                                weight: 3,
+                                weight: 5,
                             }}
                         />
                     }

@@ -4,13 +4,25 @@ namespace Contracts.Messages.Backend.Command
 {
     public record SeatReservation
     {
-        public Guid TrainCompositon { get; init; }
-        public int CarNumber { get; init; }
-        public int SeatNumber { get; init; }
-        public Guid FromStationId { get; init; }
-        public Guid ToStationId { get; init; }
+        public required Guid TrainComposition { get; init; }
+        public required int SegmentNumber { get; init; }
+        public required int CarNumber { get; init; }
+        public required int SeatNumber { get; init; }
+        public required Guid FromStationId { get; init; }
+        public required Guid ToStationId { get; init; }
+        public required DateTime DepartureTime { get; init; }
+        public required DateTime ArrivalTime { get; init; }
     }
 
-    public record ReservationCommand(SeatReservation[] SeatReservations) : ICommand { }
-    public record CancelReservationCommand(Guid ReservationId) : ICommand { }
+    public record ReservationCommand : ICommand
+    {
+        public required string ConnectionId { get; init; }
+        public required SeatReservation[] SeatReservations { get; init; }
+    }
+
+    public record CancelReservationCommand : ICommand
+    {
+        public required string ConnectionId { get; init; }
+        public required Guid ReservationId { get; init; }
+    }
 }

@@ -28,6 +28,7 @@ namespace Models.Dto
         public required string ToStationId { get; init; }
         public required string ArrivalTime { get; init; }
         public required string DepartureTime { get; init; }
+        public required int TravelTime { get; init; }
         public required string TrainCompositionId { get; init; }
     }
 }

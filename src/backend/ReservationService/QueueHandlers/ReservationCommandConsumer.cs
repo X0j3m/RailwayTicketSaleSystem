@@ -7,22 +7,30 @@ namespace ReservationsService.QueueHandler
     {
         private readonly ILogger<ReservationCommandConsumer> _logger;
         private readonly IPublishEndpoint _endpoint;
+        private readonly ReservationService.Services.ReservationService _reservationService;
 
-        public ReservationCommandConsumer(ILogger<ReservationCommandConsumer> logger, IPublishEndpoint endpoint)
+        public ReservationCommandConsumer(
+            ILogger<ReservationCommandConsumer> logger,
+            IPublishEndpoint endpoint,
+            ReservationService.Services.ReservationService reservationService)
         {
             _logger = logger;
             _endpoint = endpoint;
+            _reservationService = reservationService;
         }
 
         public async Task Consume(ConsumeContext<ReservationCommand> context)
         {
             var message = context.Message;
-            _logger.LogInformation($"Received ReservationCommand: {message.SeatReservations}");
 
-            await Task.Delay(3000);
+            var connsectionId = message.ConnectionId;
+            var seatReservations = message.SeatReservations;
+            _logger.LogInformation($"Received ReservationCommand from ConnectionId={message.ConnectionId}: Number of seat reservations={message.SeatReservations.Length}");
+
+            await _reservationService.CreateReservationAsync(seatReservations);
 
             await _endpoint.Publish(new CommandResponse());
-            _logger.LogInformation($"Published response for query: {message.GetType().Name}");
+            _logger.LogInformation($"Published response for ConnectionId={message.ConnectionId} for command: {message.GetType().Name}");
         }
     }
 }

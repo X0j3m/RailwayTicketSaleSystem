@@ -37,7 +37,7 @@ function SearchBar({
     }));
     const [departureDate, setDepartureDate] = useState(today);
 
-    const handleClick = () => {
+    const handleSubmitClick = () => {
         if (!connection || !startStationId || !endStationId) return;
 
         setTrainConnections(null);
@@ -74,7 +74,7 @@ function SearchBar({
     return (
         <form onSubmit={(e) => {
             e.preventDefault();
-            handleClick();
+            handleSubmitClick();
         }}>
             <span>{startStationName}</span>
             &nbsp;

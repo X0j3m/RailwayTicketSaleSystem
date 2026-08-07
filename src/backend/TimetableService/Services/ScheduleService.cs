@@ -88,6 +88,7 @@ namespace TimetableService.Services
                             ToStationId = dict["to_station_id"].As<string>(),
                             ArrivalTime = dict["arrival_time"].As<string>(),
                             DepartureTime = dict["departure_time"].As<string>(),
+                            TravelTime = dict["travel_time"].As<int>(),
                             TrainCompositionId = dict["train_composition_id"].As<string>(),
                         })
                         .ToList();
@@ -166,12 +167,13 @@ namespace TimetableService.Services
                 [i IN range(0, size(rels)-1) WHERE i = size(rels)-1 OR type(rels[i+1]) = 'TRANSFER'] AS segmentEnds
             WITH startStop, endStop, weight, rels, sequenceNodes, num_of_transfers, stationIds, trainCompositionIds,
                 [idx IN range(0, size(segmentStarts)-1) | {
-                    from_station_id: sequenceNodes[segmentStarts[idx]].station_id,
-                    to_station_id: sequenceNodes[segmentEnds[idx] + 1].station_id,
-                    train_composition_id: sequenceNodes[segmentStarts[idx]].train_composition_id,
-                    departure_time: sequenceNodes[segmentStarts[idx]].departure_time,
-                    arrival_time: sequenceNodes[segmentEnds[idx] + 1].arrival_time
-                }] AS transits
+                from_station_id: sequenceNodes[segmentStarts[idx]].station_id,
+                to_station_id: sequenceNodes[segmentEnds[idx] + 1].station_id,
+                train_composition_id: sequenceNodes[segmentStarts[idx]].train_composition_id,
+                departure_time: sequenceNodes[segmentStarts[idx]].departure_time,
+                arrival_time: sequenceNodes[segmentEnds[idx] + 1].arrival_time,
+                travel_time: (sequenceNodes[segmentEnds[idx] + 1].arrival_time_minutes - sequenceNodes[segmentStarts[idx]].departure_time_minutes + 1440) % 1440
+            }] AS transits
 
             WITH count(*) AS total_connections_count, collect({
                 departure: startStop.departure_time,

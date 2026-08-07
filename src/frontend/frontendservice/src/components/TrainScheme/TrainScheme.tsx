@@ -3,6 +3,9 @@ import {useSignalR} from "../../hooks/useSignalR.ts";
 import {useEffect, useState} from "react";
 import type {Car, Seat, TrainComposition, TrainCompositionsMessage} from "../../data/TrainComposition.ts";
 import type {TrainStation} from "../../data/trainStations.ts";
+import type {SeatReservation} from "../../data/Reservation.ts";
+import {sendReservationCommand} from "../../utils/UseReservationCommand.ts";
+import type {TrainConnection, TrainConnectionQuery} from "../../data/trainConnection.ts";
 
 interface SelectedSeat {
     Car: number | null;
@@ -11,16 +14,23 @@ interface SelectedSeat {
 
 export interface TrainSchemeProps {
     trainStations: Array<TrainStation>;
+    trainConnection: TrainConnection | null;
+    trainConnectionQuery: TrainConnectionQuery | null;
 }
 
-function TrainScheme({trainStations}: TrainSchemeProps) {
+function TrainScheme({trainStations, trainConnection, trainConnectionQuery}: TrainSchemeProps) {
     const {connection} = useSignalR();
-    const [showed, setShowed] = useState<boolean>(false);
     const [trainCompositions, setTrainCompositions] = useState<TrainComposition[]>([]);
+    const [showed, setShowed] = useState(false);
 
     const [activeTrainComposition, setActiveTrainComposition] = useState<TrainComposition | null>(null);
     const [activeCarNumber, setActiveCarNumber] = useState<number | null>(null);
     const [selectedSeats, setSelectedSeats] = useState<Map<string, SelectedSeat | null>>(new Map());
+
+    useEffect(() => {
+        console.log(trainConnection);
+        console.log(trainConnectionQuery);
+    }, [trainConnection, trainConnectionQuery]);
 
     useEffect(() => {
         if (!connection) return;
@@ -92,7 +102,7 @@ function TrainScheme({trainStations}: TrainSchemeProps) {
     function isCheckoutDisabled() {
         if (!selectedSeats || selectedSeats.size === 0) return true;
 
-        for (const [, seat] of selectedSeats) {
+        for (const seat of selectedSeats.values()) {
             if (seat == null) {
                 return true;
             }
@@ -100,10 +110,59 @@ function TrainScheme({trainStations}: TrainSchemeProps) {
         return false;
     }
 
+    function toDateObjString(date: string, time: string) {
+        return date + "T" + time;
+    }
+
+    function addToDateObjString(date: string, minutes: number) {
+        const d = new Date(date);
+        d.setMinutes(d.getMinutes() + minutes);
+
+        const offset = d.getTimezoneOffset() * 60000;
+        const localDate = new Date(d.getTime() - offset);
+
+        return localDate.toISOString().slice(0, 19);
+    }
+
+    function handleCheckoutClick() {
+        if (!connection || !trainConnectionQuery || !trainConnection || !trainConnection.DepartureTime || !trainConnection.Transits) return;
+
+        const seatReservations: SeatReservation[] = [];
+
+        let departureTime = toDateObjString(trainConnectionQuery.DepartureDate, trainConnection.DepartureTime);
+
+        for (let i = 0; i < trainConnection.Transits.length; i++) {
+            const trainComposition = trainCompositions[i];
+
+            const arrivalTime = addToDateObjString(departureTime, trainConnection.Transits[i].TravelTime)
+
+            const seatReservation: SeatReservation = {
+                TrainComposition: trainComposition.TrainCompositionId,
+                SegmentNumber: i,
+                CarNumber: selectedSeats.get(trainComposition.TrainCompositionId)?.Car ?? -1,
+                SeatNumber: selectedSeats.get(trainComposition.TrainCompositionId)?.Seat ?? -1,
+                FromStationId: trainComposition.StartStationId,
+                ToStationId: trainComposition.EndStationId,
+                DepartureTime: departureTime,
+                ArrivalTime: arrivalTime
+            }
+
+            if (trainConnection.TransferDetails && trainConnection.TransferDetails.length > i) {
+                departureTime = addToDateObjString(arrivalTime, trainConnection.TransferDetails[i].TransferTime);
+            }
+
+            seatReservations.push(seatReservation);
+        }
+
+        sendReservationCommand(
+            connection,
+            seatReservations);
+    }
+
     return (
         <>
-            {showed && (
-                <div className="top-centered-div">
+            {showed &&
+                <div>
                     <button
                         onClick={() => setShowed(false)}>
                         X
@@ -193,12 +252,14 @@ function TrainScheme({trainStations}: TrainSchemeProps) {
                     </div>
 
                     {activeTrainComposition && (
-                        <button disabled={isCheckoutDisabled()}>
+                        <button
+                            disabled={isCheckoutDisabled()}
+                            onClick={handleCheckoutClick}>
                             Checkout
                         </button>
                     )}
                 </div>
-            )}
+            }
         </>
     );
 }

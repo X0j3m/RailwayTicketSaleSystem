@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
@@ -10,12 +11,6 @@ class Ticket(SQLModel, table=True):
                                  primary_key=True,
                                  index=True,
                                  nullable=False)
-    departure_date: str
-    departure_time: str
-    departure_station_id: uuid.UUID
-    arrival_date: str
-    arrival_time: str
-    arrival_station_id: uuid.UUID
 
 
 class TicketSegments(SQLModel, table=True):
@@ -29,6 +24,7 @@ class TicketSegments(SQLModel, table=True):
     train_composition_id: uuid.UUID
     car_number: int
     seat_number: int
+    departure_time: datetime
+    arrival_time: datetime
     start_station_id: uuid.UUID
     end_station_id: uuid.UUID
-    departure_date: str

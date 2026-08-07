@@ -1,12 +1,19 @@
+using Microsoft.Data.SqlClient;
 using Contracts;
 using MassTransit;
 using ReservationsService.QueueHandler;
+using System.Data;
 
 Console.WriteLine("Starting ReservationService");
 
 var builder = Host.CreateApplicationBuilder(args);
 
+var connectionString = builder.Configuration.GetConnectionString("MicrosoftSQLServer") ?? throw new ArgumentNullException("MicrosoftSQLServer");
+
 builder.Services.AddHealthChecks();
+
+builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
+builder.Services.AddScoped<ReservationService.Services.ReservationService>();
 
 builder.Services.AddScoped<ReservationCommandConsumer>();
 builder.Services.AddScoped<CancelReservationCommandConsumer>();
