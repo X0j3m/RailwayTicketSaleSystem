@@ -1,21 +1,24 @@
-import type {TrainConnection, Transit} from "../../../data/trainConnection.ts";
+import type {TrainConnection, TrainConnectionQuery, Transit} from "../../../data/trainConnection.ts";
 import type {TrainStation} from "../../../data/trainStations.ts";
 import {sendAvailableSeatsQuery} from "../../../utils/UseAvailableSeats.ts";
 import {useSignalR} from "../../../hooks/useSignalR.ts";
 import type {AvailableSeatsMessage} from "../../../data/TrainComposition.ts";
+import {toDateObjString, addToDateObjString} from "../../../utils/TimeCalculator.ts";
+
 
 interface TrainConnectionBlockProps {
     trainConnection: TrainConnection;
+    trainConnectionsQuery: TrainConnectionQuery | null
     trainStations: TrainStation[];
     setSelectedTrainConnection: React.Dispatch<React.SetStateAction<TrainConnection | null>>;
     setMouseOverTrainConnection: React.Dispatch<React.SetStateAction<TrainConnection | null>>;
 }
 
-function TrainConnectionBlock({trainConnection, trainStations, setSelectedTrainConnection, setMouseOverTrainConnection}: TrainConnectionBlockProps) {
+function TrainConnectionBlock({trainConnection, trainConnectionsQuery, trainStations, setSelectedTrainConnection, setMouseOverTrainConnection}: TrainConnectionBlockProps) {
     const {connection} = useSignalR();
 
     function handleSeatsClick(e: React.MouseEvent<HTMLButtonElement>) {
-        if (!connection || !trainConnection || !trainConnection.Transits) return;
+        if (!connection || !trainConnectionsQuery || !trainConnection || !trainConnection.Transits) return;
 
         e.preventDefault();
 
@@ -24,11 +27,15 @@ function TrainConnectionBlock({trainConnection, trainStations, setSelectedTrainC
         setSelectedTrainConnection(trainConnection);
 
         trainConnection.Transits.forEach((transit: Transit) => {
+            const departureTime = toDateObjString(trainConnectionsQuery.DepartureDate, transit.DepartureTime);
+            const arrivalTime = addToDateObjString(departureTime, transit.TravelTime);
+
             const availableSeatsMessage: AvailableSeatsMessage = {
                 trainCompositionId: transit.TrainCompositionId,
                 startStation: transit.FromStationId,
                 endStation: transit.ToStationId,
-                departureDate: ''
+                departureTime: departureTime,
+                arrivalTime: arrivalTime
             }
 
             args.push(availableSeatsMessage)

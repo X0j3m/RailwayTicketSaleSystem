@@ -1,44 +1,73 @@
-﻿using Dapper;
+﻿using Contracts.Messages.Backend.Query;
+using Dapper;
+using MassTransit;
 using Models.Dto;
+using Models.Dtos;
 using System.Data;
 
 namespace TrainFleetService.Service
 {
     public class FleetService
     {
+        private readonly ILogger<FleetService> _logger;
         private readonly IDbConnection _dbConnection;
 
-        public FleetService(IDbConnection dbConnection)
+        public FleetService(
+            ILogger<FleetService> logger,
+            IDbConnection dbConnection)
         {
+            _logger = logger;
             _dbConnection = dbConnection;
         }
 
         public async Task<List<TrainStationDto>> GetStationsAsync()
         {
-            var sql = "SELECT * FROM TrainStations";
+            var sql = GetTrainStationsQueryString();
             var stations = await _dbConnection.QueryAsync<TrainStationDto>(sql);
             return stations.ToList();
         }
 
-        public async Task<TrainCompositionDto> GetTrainCompositionAsync(Guid trainCompositionId, Guid startStationId, Guid endStationId)
+        public async Task<TrainCompositionDto> GetTrainCompositionAsync(GetTrainCompositionAvailableSeatsQuery query)
         {
-            var trainCompositionIdString = trainCompositionId.ToString();
-
             var seatsSql = GetSeatsInfoQueryString();
             var trainSql = GetTrainInfoQueryString();
-            var trainSeats = await _dbConnection.QueryAsync<TrainCompositionSeatInfoDto>(seatsSql, new { trainCompositionId = trainCompositionIdString });
-            var trainInfo = await _dbConnection.QueryFirstOrDefaultAsync<TrainInfoDto>(trainSql, new { trainCompositionId = trainCompositionIdString });
+            var occupiedSeatsSql = GetOccupiedSeatsQueryString();
+
+            var trainSeats = await _dbConnection.QueryAsync<TrainCompositionSeatInfoDto>(
+                seatsSql,
+                new { trainCompositionId = query.TrainCompositionId });
+
+            var trainInfo = await _dbConnection.QueryFirstOrDefaultAsync<TrainInfoDto>(
+                trainSql,
+                new { trainCompositionId = query.TrainCompositionId });
+
+            var occupiedSeats = await _dbConnection.QueryAsync<OccupiedSeatDto>(
+                occupiedSeatsSql,
+                new
+                {
+                    trainCompositionId = query.TrainCompositionId,
+                    departureTime = query.DepartureTime.ToString(),
+                    arrivalTime = query.ArrivalTime.ToString()
+                });
+
+            if (trainInfo == null)
+            {
+                throw new Exception("Train info not found");
+            }
 
             var cars = new List<CarDto>();
-            for (int i = 0; i < trainSeats.Count(); i++)
+            foreach (var trainSeat in trainSeats)
             {
-                var trainSeat = trainSeats.ElementAtOrDefault(i);
-
-                if (cars.Count() < trainSeat.CarNumber)
+                if (trainSeat == null)
                 {
-                    cars.Add(new CarDto()
+                    throw new Exception("Train seat not found");
+                }
+
+                while (cars.Count < trainSeat.CarNumber)
+                {
+                    cars.Add(new CarDto
                     {
-                        Number = trainSeat.CarNumber
+                        Number = cars.Count + 1
                     });
                 }
 
@@ -47,23 +76,53 @@ namespace TrainFleetService.Service
                     Number = trainSeat.SeatNumber,
                     XPosition = trainSeat.SeatXPos,
                     YPosition = trainSeat.SeatYPos,
-                    Occupied = Random.Shared.NextDouble() > 0.5 ? true : false
+                    Occupied = occupiedSeats.Any(s =>
+                        s.CarNumber == trainSeat.CarNumber &&
+                        s.SeatNumber == trainSeat.SeatNumber)
                 });
             }
 
-            var trainCompositionDto = new TrainCompositionDto
+            return new TrainCompositionDto
             {
-                TrainCompositionId = trainCompositionId,
-                StartStationId = startStationId,
-                EndStationId = endStationId,
+                TrainCompositionId = query.TrainCompositionId,
+                StartStationId = query.StartStation,
+                EndStationId = query.EndStation,
                 TrainType = trainInfo.TrainType,
                 TrainNumber = trainInfo.TrainNumber,
                 Cars = cars
             };
-
-            return trainCompositionDto;
         }
 
+        private string GetTrainStationsQueryString()
+        {
+            return @"
+                SELECT
+                    [id] AS Id,
+                    [city] AS City,
+                    [name] AS Name,
+                    [latitude] AS Latitude,
+                    [longitude] AS Longitude
+               FROM [TrainStations];
+            ";
+        }
+
+        private string GetOccupiedSeatsQueryString()
+        {
+            return @"
+                SELECT 
+                    [car_number] AS CarNumber,
+                    [seat_number] AS SeatNumber
+                FROM 
+                    [TicketSegments]
+                WHERE 
+                    [train_composition_id] = @trainCompositionId
+                    AND
+                    [departure_time] < @arrivalTime
+                    AND
+                    [arrival_time] > @departureTime
+                ORDER BY car_number, seat_number;
+            ";
+        }
 
         private string GetSeatsInfoQueryString()
         {
@@ -78,21 +137,21 @@ namespace TrainFleetService.Service
                     ON TrainCompositions.id = TrainCompositions_Cars.composition_id
                 JOIN Seats
                     ON Seats.car_id = TrainCompositions_Cars.car_id
-
                 WHERE TrainCompositions.id = @trainCompositionId
-                ORDER BY TrainCompositions_Cars.car_number, Seats.number";
+                ORDER BY TrainCompositions_Cars.car_number, Seats.number;
+            ";
         }
 
         private string GetTrainInfoQueryString()
         {
             return @"
                 SELECT Trains.[type] AS TrainType,
-                      Trains.[number] AS TrainNumber
+                       Trains.[number] AS TrainNumber
                 FROM Trains
                 JOIN TrainCompositions
                   ON TrainCompositions.train_id = Trains.id
-
-                WHERE TrainCompositions.id = @trainCompositionId";
+                WHERE TrainCompositions.id = @trainCompositionId;
+            ";
         }
     }
 }

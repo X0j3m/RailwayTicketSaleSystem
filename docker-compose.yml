@@ -18,44 +18,44 @@ services:
   #   depends_on:
   #     - web_api
 
-  # web_api:
-  #   image: web_api
-  #   container_name: web_api
-  #   hostname: web_api
-  #   restart: unless-stopped
-  #   environment:
-  #     - RabbitMQ__Uri=rabbitmq://rabbitmq
-  #     - ASPNETCORE_ENVIRONMENT=Development
-  #   ports:
-  #     - "5003:8080"
-  #     - "8081:8081"
-  #   networks:
-  #     - app_network
-  #   depends_on:
-  #     train_fleet_service:
-  #       condition: service_healthy
-  #     timetable_service:
-  #       condition: service_healthy
-  #     reservation_service:
-  #       condition: service_healthy
-
-  train_fleet_service:
-    image: train_fleet_service
-    container_name: train_fleet_service
-    hostname: train_fleet_service
+  web_api:
+    image: web_api
+    container_name: web_api
+    hostname: web_api
     restart: unless-stopped
     environment:
       - RabbitMQ__Uri=rabbitmq://rabbitmq
-      - ConnectionStrings__MicrosoftSQLServer=Server=sql_db;Database=fleet;User ID=sa;Password=RootP@ssword123;TrustServerCertificate=True;
       - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "5003:8080"
+      - "8081:8081"
     networks:
       - app_network
-    healthcheck:
-      test: ["CMD-SHELL", "pgrep -f TrainFleetService || exit 1"]
-      <<: *default-healthcheck
     depends_on:
-      message_broker:
+      # train_fleet_service:
+      #   condition: service_healthy
+      timetable_service:
         condition: service_healthy
+      reservation_service:
+        condition: service_healthy
+
+  # train_fleet_service:
+  #   image: train_fleet_service
+  #   container_name: train_fleet_service
+  #   hostname: train_fleet_service
+  #   restart: unless-stopped
+  #   environment:
+  #     - RabbitMQ__Uri=rabbitmq://rabbitmq
+  #     - ConnectionStrings__MicrosoftSQLServer=Server=sql_db;Database=railway_tickets_reservation_system;User ID=sa;Password=RootP@ssword123;TrustServerCertificate=True;
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #   networks:
+  #     - app_network
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pgrep -f TrainFleetService || exit 1"]
+  #     <<: *default-healthcheck
+  #   depends_on:
+  #     message_broker:
+  #       condition: service_healthy
     
   timetable_service:
     image: timetable_service
@@ -75,22 +75,23 @@ services:
       message_broker:
         condition: service_healthy
 
-  # reservation_service:
-  #   image: reservation_service
-  #   container_name: reservation_service
-  #   hostname: reservation_service
-  #   restart: unless-stopped
-  #   environment:
-  #     - RabbitMQ__Uri=rabbitmq://rabbitmq
-  #     - ASPNETCORE_ENVIRONMENT=Development
-  #   networks:
-  #     - app_network
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pgrep -f ReservationService || exit 1"]
-  #     <<: *default-healthcheck
-  #   depends_on:
-  #     message_broker:
-  #       condition: service_healthy
+  reservation_service:
+    image: reservation_service
+    container_name: reservation_service
+    hostname: reservation_service
+    restart: unless-stopped
+    environment:
+      - RabbitMQ__Uri=rabbitmq://rabbitmq
+      - ConnectionStrings__MicrosoftSQLServer=Server=sql_db;Database=railway_tickets_reservation_system;User ID=sa;Password=RootP@ssword123;TrustServerCertificate=True;
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f ReservationService || exit 1"]
+      <<: *default-healthcheck
+    depends_on:
+      message_broker:
+        condition: service_healthy
 
   message_broker:
     image: rabbitmq:4-management

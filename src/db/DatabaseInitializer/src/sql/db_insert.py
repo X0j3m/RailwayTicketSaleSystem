@@ -1,17 +1,16 @@
 from sql.db_handler import DatabaseConnection, initialize_database, drop_database, bulk_save_entities
-from sql.fleet.entities import TrainStation, Train, TrainComposition, Car, Seat, TrainCompositionCar
-from sql.fleet.models import TrainModel, StationModel, TrainCompositionModel, CarModel, SeatModel, \
+from sql.entities import TrainStation, Train, TrainComposition, Car, Seat, TrainCompositionCar
+from sql.models import TrainModel, StationModel, TrainCompositionModel, CarModel, SeatModel, \
     TrainCompositionCarModel
 from utils.json_handler import open_json_file
 from utils.logger import create_logger
 
-
-def insert_fleet(db_connection: DatabaseConnection):
+def insert(db_connection: DatabaseConnection):
     logger = create_logger()
 
-    db_name = "fleet"
+    db_name = "railway_tickets_reservation_system"
     drop_database(db_connection, db_name)
-    initialize_database(db_connection, db_name, models_module="sql.fleet.entities")
+    initialize_database(db_connection, db_name, models_module="sql.entities")
 
     logger.info("Formatting train_stations")
     stations = open_json_file("train_stations", StationModel)

@@ -160,6 +160,7 @@ function TrainConnections() {
                                 trainConnections && trainConnections.length > 0 &&
                                 trainConnections.map((trainConnection: TrainConnection) => {
                                     return <TrainConnectionBlock trainConnection={trainConnection}
+                                                                 trainConnectionsQuery={trainConnectionsQuery}
                                                                  trainStations={trainStations}
                                                                  setSelectedTrainConnection={setSelectedTrainConnection}
                                                                  setMouseOverTrainConnection={setMouseOverTrainConnection}/>

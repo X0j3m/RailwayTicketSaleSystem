@@ -6,6 +6,7 @@ import type {TrainStation} from "../../data/trainStations.ts";
 import type {SeatReservation} from "../../data/Reservation.ts";
 import {sendReservationCommand} from "../../utils/UseReservationCommand.ts";
 import type {TrainConnection, TrainConnectionQuery} from "../../data/trainConnection.ts";
+import {toDateObjString, addToDateObjString} from "../../utils/TimeCalculator.ts";
 
 interface SelectedSeat {
     Car: number | null;
@@ -62,6 +63,9 @@ function TrainScheme({trainStations, trainConnection, trainConnectionQuery}: Tra
                         selectedSeatsMap.set(composition.TrainCompositionId, null);
                     });
 
+                    console.log(parsedData);
+
+                    
                     setSelectedSeats(selectedSeatsMap);
                 }
 
@@ -110,19 +114,7 @@ function TrainScheme({trainStations, trainConnection, trainConnectionQuery}: Tra
         return false;
     }
 
-    function toDateObjString(date: string, time: string) {
-        return date + "T" + time;
-    }
 
-    function addToDateObjString(date: string, minutes: number) {
-        const d = new Date(date);
-        d.setMinutes(d.getMinutes() + minutes);
-
-        const offset = d.getTimezoneOffset() * 60000;
-        const localDate = new Date(d.getTime() - offset);
-
-        return localDate.toISOString().slice(0, 19);
-    }
 
     function handleCheckoutClick() {
         if (!connection || !trainConnectionQuery || !trainConnection || !trainConnection.DepartureTime || !trainConnection.Transits) return;

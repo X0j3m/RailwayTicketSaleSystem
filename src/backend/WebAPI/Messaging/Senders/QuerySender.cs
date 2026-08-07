@@ -1,5 +1,4 @@
-﻿using Contracts;
-using Contracts.Messages.Backend.Query.Abstraction;
+﻿using Contracts.Messages.Backend.Query.Abstraction;
 using MassTransit;
 using WebAPI.Messaging.Senders.Abstraction;
 

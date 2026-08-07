@@ -1,7 +1,7 @@
 from neo.db_handler import DatabaseConnection, bulk_save_entities, create_relations, create_indexes
-from neo.schedule.models import StopModel, LeadsToRelationModel, TransferRelationModel
-from neo.schedule.nodes import Stop, TrainStation
-from sql.fleet.models import StationModel
+from neo.models import StopModel, LeadsToRelationModel, TransferRelationModel
+from neo.nodes import Stop, TrainStation
+from sql.models import StationModel
 from utils.json_handler import open_json_file
 from datetime import datetime, timedelta
 

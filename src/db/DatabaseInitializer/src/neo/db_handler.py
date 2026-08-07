@@ -34,7 +34,7 @@ def clear_temp_properties():
 
 
 def create_indexes():
-    db.cypher_query("CREATE INDEX stop_search_idx FOR (s:Stop) ON (s.station_id, s.departure_time_minutes)")
+    db.cypher_query("CREATE INDEX stop_search_idx IF NOT EXISTS FOR (s:Stop) ON (s.station_id, s.departure_time_minutes)")
 
 def bulk_save_entities(db_connection: DatabaseConnection, model_class: Type[StructuredNode],
                        entities: List[Any]):

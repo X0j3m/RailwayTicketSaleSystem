@@ -33,11 +33,12 @@ namespace TrainFleetService.QueueHandler
                 var trainCompositionId = query.TrainCompositionId;
                 var startStation = query.StartStation;
                 var endStation = query.EndStation;
-                var departureDate = query.DepartureDate;
+                var departureTime = query.DepartureTime;
+                var arrivalTime = query.ArrivalTime;
 
-                _logger.LogInformation($"Processing query for ConnectionId={connectionId}: TrainCompositionId={trainCompositionId}, StartStation={startStation}, EndStation={endStation}, DepartureDate={departureDate}");
+                _logger.LogInformation($"Processing query for ConnectionId={connectionId}: TrainCompositionId={trainCompositionId}, StartStation={startStation}, EndStation={endStation}, DepartureTime={departureTime}, ArrivalTime={arrivalTime}");
 
-                var result = await _fleetService.GetTrainCompositionAsync(trainCompositionId, startStation, endStation);
+                var result = await _fleetService.GetTrainCompositionAsync(query);
 
                 response.Add(result);
             }

@@ -1,10 +1,8 @@
 ﻿using Contracts.Messages.Backend.Command;
+using Contracts.Messages.Backend.Query;
 using Dapper;
-using MassTransit.Caching.Internals;
-using MassTransit.Internals.GraphValidation;
 using ReservationService.Model;
 using System.Data;
-using System.Text;
 
 namespace ReservationService.Services
 {
@@ -21,53 +19,62 @@ namespace ReservationService.Services
 
         public async Task<Guid> CreateReservationAsync(SeatReservation[] seatReservations)
         {
-            var sb = new StringBuilder();
-
-            sb.AppendLine(@"BEGIN TRANSACTION;
-                            SET DATEFORMAT dmy;");
-
-            var ticketId = Guid.NewGuid();
-
-            sb.AppendLine(GetCreateTicketSqlQuery(ticketId));
-
-            foreach (var reservation in seatReservations)
+            if (_dbConnection.State != ConnectionState.Open)
             {
-                var ticketSegmentEntity = new TicketSegmentSqlEntity
-                {
-                    Id = Guid.NewGuid(),
-                    TicketId = ticketId,
-                    SegmentNumber = reservation.SegmentNumber,
-                    TrainCompositionId = reservation.TrainComposition,
-                    CarNumber = reservation.CarNumber,
-                    SeatNumber = reservation.SeatNumber,
-                    DepartureTime = reservation.DepartureTime,
-                    ArrivalTime = reservation.ArrivalTime,
-                    StartStationId = reservation.FromStationId,
-                    EndStationId = reservation.ToStationId,
-                };
-
-                sb.AppendLine(GetCreateTicketSegmentSqlQuery(ticketSegmentEntity));
+                _dbConnection.Open();
             }
 
-            sb.AppendLine("COMMIT;");
+            using var transaction = _dbConnection.BeginTransaction();
 
-            var sql = sb.ToString();
+            try
+            {
+                var ticketId = Guid.NewGuid();
 
-            _logger.LogInformation($"Executing SQL: \n{sql}");
+                const string insertTicketSql = INSERT_TICKET_SQL_QUERY;
+                await _dbConnection.ExecuteAsync(insertTicketSql, new { TicketId = ticketId }, transaction);
 
-            await _dbConnection.ExecuteAsync(sql);
+                string insertSegmentSql = INSERT_TICKETS_SEGMENT_SQL_QUERY;
 
-            return Guid.NewGuid();
+                foreach (var reservation in seatReservations)
+                {
+                    var entity = new TicketSegmentSqlEntity
+                    {
+                        Id = Guid.NewGuid(),
+                        TicketId = ticketId,
+                        SegmentNumber = reservation.SegmentNumber,
+                        TrainCompositionId = reservation.TrainComposition,
+                        CarNumber = reservation.CarNumber,
+                        SeatNumber = reservation.SeatNumber,
+                        DepartureTime = reservation.DepartureTime,
+                        ArrivalTime = reservation.ArrivalTime,
+                        StartStationId = reservation.FromStationId,
+                        EndStationId = reservation.ToStationId,
+                    };
+
+                    var rowsAffected = await _dbConnection.ExecuteAsync(insertSegmentSql, entity, transaction);
+
+                    if (rowsAffected == 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"Seat {reservation.SeatNumber} in car {reservation.CarNumber} is already reserved in the specified time interval.");
+                    }
+                }
+
+                transaction.Commit();
+                return ticketId;
+            }
+            catch
+            {
+                transaction.Rollback();
+                return Guid.Empty;
+            }
         }
 
-        private string GetCreateTicketSqlQuery(Guid ticketId)
-        {
-            return $"INSERT INTO [Tickets] ([id]) VALUES('{ticketId}');";
-        }
+        private const string INSERT_TICKET_SQL_QUERY =
+            "INSERT INTO [Tickets] ([id]) VALUES (@TicketId);";
 
-        private string GetCreateTicketSegmentSqlQuery(TicketSegmentSqlEntity ticketSegmentEntity)
-        {
-            return $@"
+        private const string INSERT_TICKETS_SEGMENT_SQL_QUERY =
+            @"
                 INSERT INTO [TicketSegments] (
                     [id],
                     [ticket_id],
@@ -79,19 +86,30 @@ namespace ReservationService.Services
                     [arrival_time],
                     [start_station_id],
                     [end_station_id])
-                VALUES(
-	                '{ticketSegmentEntity.Id}',
-	                '{ticketSegmentEntity.TicketId}',
-                    {ticketSegmentEntity.SegmentNumber},
-	                '{ticketSegmentEntity.TrainCompositionId}',
-	                {ticketSegmentEntity.CarNumber},
-	                {ticketSegmentEntity.SeatNumber},
-                    '{ticketSegmentEntity.DepartureTime}',
-                    '{ticketSegmentEntity.ArrivalTime}',
-	                '{ticketSegmentEntity.StartStationId}',
-	                '{ticketSegmentEntity.EndStationId}'
-                );
-            ";
-        }
+                    SELECT 
+                        @Id,
+                        @TicketId,
+                        @SegmentNumber,
+                        @TrainCompositionId,
+                        @CarNumber,
+                        @SeatNumber,
+                        @DepartureTime,
+                        @ArrivalTime,
+                        @StartStationId,
+                        @EndStationId
+                    WHERE NOT EXISTS (
+                        SELECT 1 
+                        FROM [TicketSegments] WITH (UPDLOCK, HOLDLOCK)
+                        WHERE
+                            [train_composition_id] = @TrainCompositionId
+                            AND
+                            [car_number] = @CarNumber
+                            AND
+                            [seat_number] = @SeatNumber
+                            AND
+                            [departure_time] < @ArrivalTime
+                            AND
+                            [arrival_time] > @DepartureTime)
+                ;";
     }
 }

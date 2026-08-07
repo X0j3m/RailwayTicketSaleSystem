@@ -14,6 +14,7 @@ var connectionString = builder.Configuration.GetConnectionString("MicrosoftSQLSe
 
 builder.Services.AddHealthChecks();
 
+
 builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
 builder.Services.AddScoped<FleetService>();
 

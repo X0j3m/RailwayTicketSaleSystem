@@ -28,5 +28,6 @@ export interface AvailableSeatsMessage {
     trainCompositionId: string,
     startStation: string,
     endStation: string,
-    departureDate: string
+    departureTime: string
+    arrivalTime: string
 }

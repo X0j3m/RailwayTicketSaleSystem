@@ -1,5 +1,6 @@
 ﻿using Contracts.Messages.Backend.Query.Abstraction;
 using Models.Dto;
+using Models.Dtos;
 
 namespace Contracts.Messages.Backend.Query
 {

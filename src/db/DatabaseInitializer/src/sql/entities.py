@@ -1,5 +1,6 @@
 import uuid
 from typing import List, Optional
+from datetime import datetime
 from sqlmodel import Field, SQLModel, Relationship
 from sqlalchemy import NVARCHAR, Column
 
@@ -74,3 +75,28 @@ class Seat(SQLModel, table=True):
     number: int
     x_pos: int
     y_pos: int
+
+
+class Ticket(SQLModel, table=True):
+    __tablename__ = "Tickets"
+    id: uuid.UUID | None = Field(default=None,
+                                 primary_key=True,
+                                 index=True,
+                                 nullable=False)
+
+
+class TicketSegments(SQLModel, table=True):
+    __tablename__ = "TicketSegments"
+    id: uuid.UUID | None = Field(default=None,
+                                 primary_key=True,
+                                 index=True,
+                                 nullable=False)
+    ticket_id: Optional[uuid.UUID] = Field(foreign_key="Tickets.id")
+    segment_number: int
+    train_composition_id: uuid.UUID
+    car_number: int
+    seat_number: int
+    departure_time: datetime
+    arrival_time: datetime
+    start_station_id: uuid.UUID
+    end_station_id: uuid.UUID

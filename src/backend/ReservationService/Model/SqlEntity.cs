@@ -13,4 +13,10 @@
         public required Guid StartStationId { get; init; }
         public required Guid EndStationId { get; init; }
     }
+
+    public record OccupiedSeatSqlEntity
+    {
+        public required int CarNumber { get; init; }
+        public required int SeatNumber { get; init; }
+    }
 }
