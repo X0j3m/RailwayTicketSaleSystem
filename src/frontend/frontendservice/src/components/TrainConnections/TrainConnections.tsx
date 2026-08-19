@@ -7,8 +7,7 @@ import TrainConnectionsMap from "../TrainConnectionsMap/TrainConnectionsMap.tsx"
 import type {Page} from "../../data/Page.ts";
 import ConnectionsSearchHandler from "./ConnectionsSearchHandler.tsx";
 import {addDays, format, parseISO} from 'date-fns';
-import {useTrainStations} from "../../utils/UseTrainStations.ts";
-import TrainScheme from "../TrainScheme/TrainScheme.tsx";
+import type {TrainStation} from "../../data/trainStations.ts";
 
 export type StartStationState = [
         string | undefined,
@@ -20,7 +19,11 @@ export type EndStationState = [
     Dispatch<SetStateAction<string | undefined>>
 ];
 
-function TrainConnections() {
+export interface TrainConnectionsProps {
+    trainStations: Array<TrainStation>;
+}
+
+function TrainConnections({trainStations}: TrainConnectionsProps) {
     const [trainConnectionsQuery, setTrainConnectionsQuery] = useState<TrainConnectionQuery | null>(null);
 
     const [trainConnectionsMetadata, setTrainConnectionsMetadata] = useState<Page | null>(null);
@@ -31,10 +34,7 @@ function TrainConnections() {
 
     const [selectedConnectionsPageNumber, setSelectedConnectionsPageNumber] = useState<number>(0);
 
-    const [selectedTrainConnection, setSelectedTrainConnection] = useState<TrainConnection | null>(null);
     const [mouseOverTrainConnection, setMouseOverTrainConnection] = useState<TrainConnection | null>(null);
-
-    const trainStations = useTrainStations();
 
     function handleChangeDayClick(offset: number) {
         if (!trainConnectionsQuery) return;
@@ -70,12 +70,8 @@ function TrainConnections() {
         setTrainConnectionsQuery(newTrainConnectionsQuery);
     }
 
-
     return (
         <>
-            <TrainScheme trainStations={trainStations}
-                         trainConnection={selectedTrainConnection}
-                         trainConnectionQuery={trainConnectionsQuery}/>
             <>
                 <ConnectionsSearchHandler
                     setTrainConnections={setTrainConnections}
@@ -153,18 +149,18 @@ function TrainConnections() {
                             }
                         </div>
                         {
-                            trainConnections == null
-                                ?
-                                <span style={{userSelect: "none"}}>Loading</span>
-                                :
-                                trainConnections && trainConnections.length > 0 &&
-                                trainConnections.map((trainConnection: TrainConnection) => {
-                                    return <TrainConnectionBlock trainConnection={trainConnection}
-                                                                 trainConnectionsQuery={trainConnectionsQuery}
-                                                                 trainStations={trainStations}
-                                                                 setSelectedTrainConnection={setSelectedTrainConnection}
-                                                                 setMouseOverTrainConnection={setMouseOverTrainConnection}/>
-                                })
+                            trainConnectionsQuery == null ? <p></p> : (
+                                trainConnections == null
+                                    ?
+                                    <span style={{userSelect: "none"}}>Loading</span>
+                                    :
+                                    trainConnections && trainConnections.length > 0 &&
+                                    trainConnections.map((trainConnection: TrainConnection) => {
+                                        return <TrainConnectionBlock trainConnection={trainConnection}
+                                                                     trainConnectionsQuery={trainConnectionsQuery}
+                                                                     trainStations={trainStations}
+                                                                     setMouseOverTrainConnection={setMouseOverTrainConnection}/>
+                                    }))
                         }
                         <div>
                             {trainConnectionsMetadata &&

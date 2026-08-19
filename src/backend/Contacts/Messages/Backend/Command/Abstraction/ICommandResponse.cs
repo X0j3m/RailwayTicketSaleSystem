@@ -1,4 +1,4 @@
 ﻿namespace Contracts.Messages.Backend.Command.Abstraction
 {
-    public interface ICommandResponse { }
+    public interface ICommandResponse : IMessage { }
 }

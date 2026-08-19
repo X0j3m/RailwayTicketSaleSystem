@@ -2,5 +2,18 @@
 
 namespace Contracts.Messages.Backend.Command
 {
-    public record CommandResponse : ICommandResponse { }
+    public record CommandResponse : ICommandResponse
+    {
+        public required string ConnectionId { get; init; }
+    }
+    public record TicketReservationCommandResponse : ICommandResponse
+    {
+        public required string ConnectionId { get; init; }
+        public required Guid TicketId { get; init; }
+    }
+    public record CancelTicketReservationCommandResponse : ICommandResponse
+    {
+        public required string ConnectionId { get; init; }
+        public required Guid TicketId { get; init; }
+    }
 }

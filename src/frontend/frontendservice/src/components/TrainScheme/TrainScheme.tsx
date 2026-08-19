@@ -4,9 +4,9 @@ import {useEffect, useState} from "react";
 import type {Car, Seat, TrainComposition, TrainCompositionsMessage} from "../../data/TrainComposition.ts";
 import type {TrainStation} from "../../data/trainStations.ts";
 import type {SeatReservation} from "../../data/Reservation.ts";
-import {sendReservationCommand} from "../../utils/UseReservationCommand.ts";
-import type {TrainConnection, TrainConnectionQuery} from "../../data/trainConnection.ts";
 import {toDateObjString, addToDateObjString} from "../../utils/TimeCalculator.ts";
+import {useLocation, useNavigate} from "react-router-dom";
+import type {TrainConnection, TrainConnectionQuery} from "../../data/trainConnection.ts";
 
 interface SelectedSeat {
     Car: number | null;
@@ -15,22 +15,25 @@ interface SelectedSeat {
 
 export interface TrainSchemeProps {
     trainStations: Array<TrainStation>;
-    trainConnection: TrainConnection | null;
-    trainConnectionQuery: TrainConnectionQuery | null;
 }
 
-function TrainScheme({trainStations, trainConnection, trainConnectionQuery}: TrainSchemeProps) {
+function TrainScheme({trainStations}: TrainSchemeProps) {
     const {connection} = useSignalR();
+    const navigate = useNavigate();
+
     const [trainCompositions, setTrainCompositions] = useState<TrainComposition[]>([]);
-    const [showed, setShowed] = useState(false);
+    const location = useLocation();
+
+    const trainConnection: TrainConnection = location.state?.trainConnection;
+    const trainConnectionQuery: TrainConnectionQuery = location.state?.trainConnectionsQuery;
 
     const [activeTrainComposition, setActiveTrainComposition] = useState<TrainComposition | null>(null);
     const [activeCarNumber, setActiveCarNumber] = useState<number | null>(null);
     const [selectedSeats, setSelectedSeats] = useState<Map<string, SelectedSeat | null>>(new Map());
 
     useEffect(() => {
-        console.log(trainConnection);
-        console.log(trainConnectionQuery);
+        console.log("Connection: ", trainConnection);
+        console.log("Query: ", trainConnectionQuery);
     }, [trainConnection, trainConnectionQuery]);
 
     useEffect(() => {
@@ -53,7 +56,6 @@ function TrainScheme({trainStations, trainConnection, trainConnectionQuery}: Tra
                 })) || [];
 
                 if (parsedData.length > 0) {
-                    setShowed(true);
                     setTrainCompositions(parsedData);
                     setActiveTrainComposition(parsedData[0]);
                     setActiveCarNumber(0);
@@ -65,7 +67,6 @@ function TrainScheme({trainStations, trainConnection, trainConnectionQuery}: Tra
 
                     console.log(parsedData);
 
-                    
                     setSelectedSeats(selectedSeatsMap);
                 }
 
@@ -103,7 +104,7 @@ function TrainScheme({trainStations, trainConnection, trainConnectionQuery}: Tra
         });
     }
 
-    function isCheckoutDisabled() {
+    function isSummaryDisabled() {
         if (!selectedSeats || selectedSeats.size === 0) return true;
 
         for (const seat of selectedSeats.values()) {
@@ -114,9 +115,7 @@ function TrainScheme({trainStations, trainConnection, trainConnectionQuery}: Tra
         return false;
     }
 
-
-
-    function handleCheckoutClick() {
+    function handleSummaryClick() {
         if (!connection || !trainConnectionQuery || !trainConnection || !trainConnection.DepartureTime || !trainConnection.Transits) return;
 
         const seatReservations: SeatReservation[] = [];
@@ -146,24 +145,17 @@ function TrainScheme({trainStations, trainConnection, trainConnectionQuery}: Tra
             seatReservations.push(seatReservation);
         }
 
-        sendReservationCommand(
-            connection,
-            seatReservations);
+        navigate("/ticket-summary", {
+            state: {
+                seatReservations
+            }
+        });
     }
 
     return (
         <>
-            {showed &&
+            {trainCompositions.length == 0 ? null :
                 <div>
-                    <button
-                        onClick={() => setShowed(false)}>
-                        X
-                    </button>
-                    <br/>
-                    <br/>
-                    <br/>
-                    <br/>
-
                     {trainCompositions.map((composition: TrainComposition) => {
                         const startStation = trainStations.find(s => s.id === composition.StartStationId);
                         const endStation = trainStations.find(s => s.id === composition.EndStationId);
@@ -245,9 +237,9 @@ function TrainScheme({trainStations, trainConnection, trainConnectionQuery}: Tra
 
                     {activeTrainComposition && (
                         <button
-                            disabled={isCheckoutDisabled()}
-                            onClick={handleCheckoutClick}>
-                            Checkout
+                            disabled={isSummaryDisabled()}
+                            onClick={handleSummaryClick}>
+                            Summary
                         </button>
                     )}
                 </div>

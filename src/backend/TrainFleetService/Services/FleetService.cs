@@ -46,9 +46,11 @@ namespace TrainFleetService.Service
                 new
                 {
                     trainCompositionId = query.TrainCompositionId,
-                    departureTime = query.DepartureTime.ToString(),
-                    arrivalTime = query.ArrivalTime.ToString()
+                    departureTime = query.DepartureTime,
+                    arrivalTime = query.ArrivalTime
                 });
+
+            _logger.LogInformation($"Train composition {query.TrainCompositionId} found, {trainSeats.Count()} seats total, {occupiedSeats.Count()} seats occupied.");
 
             if (trainInfo == null)
             {
@@ -109,6 +111,7 @@ namespace TrainFleetService.Service
         private string GetOccupiedSeatsQueryString()
         {
             return @"
+                SET DATEFORMAT ymd;
                 SELECT 
                     [car_number] AS CarNumber,
                     [seat_number] AS SeatNumber

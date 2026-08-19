@@ -4,27 +4,32 @@ import {sendAvailableSeatsQuery} from "../../../utils/UseAvailableSeats.ts";
 import {useSignalR} from "../../../hooks/useSignalR.ts";
 import type {AvailableSeatsMessage} from "../../../data/TrainComposition.ts";
 import {toDateObjString, addToDateObjString} from "../../../utils/TimeCalculator.ts";
+import {useNavigate} from "react-router-dom";
 
 
 interface TrainConnectionBlockProps {
     trainConnection: TrainConnection;
-    trainConnectionsQuery: TrainConnectionQuery | null
+    trainConnectionsQuery: TrainConnectionQuery
     trainStations: TrainStation[];
-    setSelectedTrainConnection: React.Dispatch<React.SetStateAction<TrainConnection | null>>;
     setMouseOverTrainConnection: React.Dispatch<React.SetStateAction<TrainConnection | null>>;
 }
 
-function TrainConnectionBlock({trainConnection, trainConnectionsQuery, trainStations, setSelectedTrainConnection, setMouseOverTrainConnection}: TrainConnectionBlockProps) {
+function TrainConnectionBlock({
+                                  trainConnection,
+                                  trainConnectionsQuery,
+                                  trainStations,
+                                  setMouseOverTrainConnection
+                              }: TrainConnectionBlockProps) {
     const {connection} = useSignalR();
+    const navigate = useNavigate();
 
     function handleSeatsClick(e: React.MouseEvent<HTMLButtonElement>) {
-        if (!connection || !trainConnectionsQuery || !trainConnection || !trainConnection.Transits) return;
+
+        if (!connection || !trainConnection || !trainConnection.Transits) return;
 
         e.preventDefault();
 
         const args: AvailableSeatsMessage[] = []
-
-        setSelectedTrainConnection(trainConnection);
 
         trainConnection.Transits.forEach((transit: Transit) => {
             const departureTime = toDateObjString(trainConnectionsQuery.DepartureDate, transit.DepartureTime);
@@ -42,6 +47,13 @@ function TrainConnectionBlock({trainConnection, trainConnectionsQuery, trainStat
         });
 
         sendAvailableSeatsQuery(connection, args)
+
+        navigate("/seat-selection", {
+            state: {
+                trainConnection,
+                trainConnectionsQuery
+            }
+        });
     }
 
     return (

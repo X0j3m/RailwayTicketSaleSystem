@@ -17,8 +17,36 @@ namespace ReservationService.Services
             _dbConnection = dbConnection;
         }
 
+        public async Task<Guid> CancelReservationAsync(Guid ticketId)
+        {
+            _logger.LogInformation($"Cancelling reservation for TicketId: {ticketId}");
+            if (_dbConnection.State != ConnectionState.Open)
+            {
+                _dbConnection.Open();
+            }
+            using var transaction = _dbConnection.BeginTransaction();
+            try
+            {
+                const string deleteSegmentsSql = "DELETE FROM [TicketSegments] WHERE [ticket_id] = @TicketId;";
+                await _dbConnection.ExecuteAsync(deleteSegmentsSql, new { TicketId = ticketId }, transaction);
+                const string deleteTicketSql = "DELETE FROM [Tickets] WHERE [id] = @TicketId;";
+                await _dbConnection.ExecuteAsync(deleteTicketSql, new { TicketId = ticketId }, transaction);
+                transaction.Commit();
+                _logger.LogInformation($"Reservation cancelled successfully for TicketId: {ticketId}");
+                return ticketId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while cancelling reservation for TicketId: {ticketId}. Performing Rollback.");
+                transaction.Rollback();
+                return Guid.Empty;
+            }
+        }
+
         public async Task<Guid> CreateReservationAsync(SeatReservation[] seatReservations)
         {
+            _logger.LogInformation($"Creating reservation for {seatReservations?.Length ?? 0} seat reservations.");
+
             if (_dbConnection.State != ConnectionState.Open)
             {
                 _dbConnection.Open();
@@ -29,6 +57,7 @@ namespace ReservationService.Services
             try
             {
                 var ticketId = Guid.NewGuid();
+                _logger.LogInformation($"Generated TicketId: {ticketId}");
 
                 const string insertTicketSql = INSERT_TICKET_SQL_QUERY;
                 await _dbConnection.ExecuteAsync(insertTicketSql, new { TicketId = ticketId }, transaction);
@@ -51,20 +80,33 @@ namespace ReservationService.Services
                         EndStationId = reservation.ToStationId,
                     };
 
+                    _logger.LogInformation(
+                        $"Trying to insert segment: Id: {entity.Id}, TicketId: {entity.TicketId}, SegmentNumber: {entity.SegmentNumber}, " +
+                        $"TrainCompositionId: {entity.TrainCompositionId}, CarNumber: {entity.CarNumber}, SeatNumber: {entity.SeatNumber}, " +
+                        $"DepartureTime: {entity.DepartureTime:yyyy-MM-dd HH:mm:ss.fff}, ArrivalTime: {entity.ArrivalTime:yyyy-MM-dd HH:mm:ss.fff}, " +
+                        $"StartStationId: {entity.StartStationId}, EndStationId: {entity.EndStationId}");
+
                     var rowsAffected = await _dbConnection.ExecuteAsync(insertSegmentSql, entity, transaction);
 
                     if (rowsAffected == 0)
                     {
+                        _logger.LogWarning(
+                            $"RESERVATION COLLISION! Segment not saved. Seat {entity.SeatNumber} in car {entity.CarNumber} is already reserved " +
+                            $"for the time interval {entity.DepartureTime:yyyy-MM-dd HH:mm:ss.fff} - {entity.ArrivalTime:yyyy-MM-dd HH:mm:ss.fff} " +
+                            $"for train composition {entity.TrainCompositionId}.");
+
                         throw new InvalidOperationException(
                             $"Seat {reservation.SeatNumber} in car {reservation.CarNumber} is already reserved in the specified time interval.");
                     }
                 }
 
                 transaction.Commit();
+                _logger.LogInformation($"Reservation transaction committed successfully for TicketId: {ticketId}");
                 return ticketId;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error occurred while creating reservation. Performing Rollback.");
                 transaction.Rollback();
                 return Guid.Empty;
             }

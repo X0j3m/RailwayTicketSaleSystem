@@ -23,6 +23,6 @@ namespace Contracts.Messages.Backend.Command
     public record CancelReservationCommand : ICommand
     {
         public required string ConnectionId { get; init; }
-        public required Guid ReservationId { get; init; }
+        public required Guid TicketId { get; init; }
     }
 }

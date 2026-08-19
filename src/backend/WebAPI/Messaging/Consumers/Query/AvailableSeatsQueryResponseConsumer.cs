@@ -22,7 +22,7 @@ namespace WebAPI.Messaging.Consumers.Query
         {
             var response = context.Message;
             var connectionId = response.ConnectionId;
-            _logger.LogInformation($"Received AvailableSeatsQueryResponse for connectionId={connectionId}");
+            _logger.LogInformation($"Received AvailableSeatsQueryResponse for ConnectionId={connectionId}");
             var message = new SeatsMessage { ConnectionId = connectionId, MessageItems = response.Trains };
             await _messageDispatcher.Dispatch("ReceiveAvailableSeatsQueryResponse", message);
             await Task.CompletedTask;

@@ -27,9 +27,13 @@ namespace ReservationsService.QueueHandler
             var seatReservations = message.SeatReservations;
             _logger.LogInformation($"Received ReservationCommand from ConnectionId={message.ConnectionId}: Number of seat reservations={message.SeatReservations.Length}");
 
-            await _reservationService.CreateReservationAsync(seatReservations);
+            var ticketId = await _reservationService.CreateReservationAsync(seatReservations);
 
-            await _endpoint.Publish(new CommandResponse());
+            await _endpoint.Publish(new TicketReservationCommandResponse
+            {
+                ConnectionId = message.ConnectionId,
+                TicketId = ticketId
+            });
             _logger.LogInformation($"Published response for ConnectionId={message.ConnectionId} for command: {message.GetType().Name}");
         }
     }
