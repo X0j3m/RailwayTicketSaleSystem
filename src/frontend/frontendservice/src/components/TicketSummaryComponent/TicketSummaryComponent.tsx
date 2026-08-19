@@ -22,14 +22,14 @@ function TicketSummaryComponent({trainStations}: TicketSummaryProps) {
             seatReservations);
     }
 
-    const formatDate = (isoString: string) => {
+    const formatDate = (isoDateString: string) => {
         return new Intl.DateTimeFormat("pl-PL", {
             day: "numeric",
             month: "long",
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
-        }).format(new Date(isoString));
+        }).format(new Date(isoDateString));
     };
 
     return (
