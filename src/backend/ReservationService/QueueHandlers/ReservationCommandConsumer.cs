@@ -24,10 +24,11 @@ namespace ReservationsService.QueueHandler
             var message = context.Message;
 
             var connsectionId = message.ConnectionId;
+            var email = message.Email;
             var seatReservations = message.SeatReservations;
             _logger.LogInformation($"Received ReservationCommand from ConnectionId={message.ConnectionId}: Number of seat reservations={message.SeatReservations.Length}");
 
-            var ticketId = await _reservationService.CreateReservationAsync(seatReservations);
+            var ticketId = await _reservationService.CreateReservationAsync(email, seatReservations);
 
             await _endpoint.Publish(new TicketReservationCommandResponse
             {

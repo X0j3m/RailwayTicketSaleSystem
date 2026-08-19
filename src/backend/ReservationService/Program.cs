@@ -1,6 +1,7 @@
-using Microsoft.Data.SqlClient;
 using Contracts;
 using MassTransit;
+using Microsoft.Data.SqlClient;
+using ReservationService.QueueHandlers;
 using ReservationsService.QueueHandler;
 using System.Data;
 
@@ -17,10 +18,13 @@ builder.Services.AddScoped<ReservationService.Services.ReservationService>();
 
 builder.Services.AddScoped<ReservationCommandConsumer>();
 builder.Services.AddScoped<CancelReservationCommandConsumer>();
+builder.Services.AddScoped<GetTicketsQueryConsumer>();
+
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<ReservationCommandConsumer>();
     x.AddConsumer<CancelReservationCommandConsumer>();
+    x.AddConsumer<GetTicketsQueryConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -40,6 +44,7 @@ builder.Services.AddMassTransit(x =>
             e.ConfigureConsumeTopology = false;
             e.ConfigureConsumer<ReservationCommandConsumer>(context);
             e.ConfigureConsumer<CancelReservationCommandConsumer>(context);
+            e.ConfigureConsumer<GetTicketsQueryConsumer>(context);
         });
     });
 });

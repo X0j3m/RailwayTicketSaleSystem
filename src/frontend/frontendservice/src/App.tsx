@@ -4,6 +4,8 @@ import TrainScheme from "./components/TrainScheme/TrainScheme.tsx";
 import {useTrainStations} from "./utils/UseTrainStations.ts";
 import TrainConnections from "./components/TrainConnections/TrainConnections.tsx";
 import TicketSummaryComponent from "./components/TicketSummaryComponent/TicketSummaryComponent.tsx";
+import CheckoutInfoComponent from "./components/CheckoutInfoComponent/CheckoutInfoComponent.tsx";
+import TicketsGridComponent from "./components/TicketsGridComponent/TicketsGridComponent.tsx";
 
 export function App() {
     const trainStations = useTrainStations();
@@ -20,6 +22,14 @@ export function App() {
         {
             path: "/ticket-summary",
             element: <TicketSummaryComponent trainStations={trainStations}/>
+        },
+        {
+            path: "/checkout-info",
+            element: <CheckoutInfoComponent/>
+        },
+        {
+            path: "/tickets",
+            element: <TicketsGridComponent trainStations={trainStations}/>
         }
     ]);
 

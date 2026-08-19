@@ -44,6 +44,13 @@ namespace WebAPI.Hubs
             await _querySender.SendQueryAsync(query, QueueNames.TimetableServiceQueue);
         }
 
+        public async Task GetTickets(GetTicketsQuery query)
+        {
+            var connectionId = query.ConnectionId;
+            _logger.LogInformation($"Sending GetTicketsQuery from connectionId={connectionId}");
+            await _querySender.SendQueryAsync(query, QueueNames.ReservationServiceQueue);
+        }
+
         public async Task CreateReservation(ReservationCommand command)
         {
             var connectionId = command.ConnectionId;

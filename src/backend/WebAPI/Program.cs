@@ -38,6 +38,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<AvailableSeatsQueryResponseConsumer>();
     x.AddConsumer<CommandResponseConsumer>();
     x.AddConsumer<TicketReservationConsumer>();
+    x.AddConsumer<GetTicketsQueryResponseConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {

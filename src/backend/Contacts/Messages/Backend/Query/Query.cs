@@ -32,4 +32,10 @@ namespace Contracts.Messages.Backend.Query
         public required int PageNumber { get; init; }
         public required int PageSize { get; init; }
     }
+
+    public record GetTicketsQuery : IQuery
+    {
+        public required string ConnectionId { get; init; }
+        public required string Email { get; init; }
+    }
 }

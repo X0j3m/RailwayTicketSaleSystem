@@ -83,6 +83,7 @@ class Ticket(SQLModel, table=True):
                                  primary_key=True,
                                  index=True,
                                  nullable=False)
+    email: str
 
 
 class TicketSegments(SQLModel, table=True):

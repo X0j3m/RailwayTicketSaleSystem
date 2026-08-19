@@ -1,6 +1,6 @@
 ﻿using Contracts.Messages.Backend.Command;
-using Contracts.Messages.Backend.Query;
 using Dapper;
+using Models.Dtos;
 using ReservationService.Model;
 using System.Data;
 
@@ -15,6 +15,27 @@ namespace ReservationService.Services
         {
             _logger = logger;
             _dbConnection = dbConnection;
+        }
+
+        public async Task<TicketDto[]> GetTicketsByEmailAsync(string email)
+        {
+            _logger.LogInformation($"Fetching tickets for email: {email}");
+            if (_dbConnection.State != ConnectionState.Open)
+            {
+                _dbConnection.Open();
+            }
+            try
+            {
+                var query = GET_TICKETS_BY_EMAIL_SQL_QUERY.Replace("@Email", email);
+                var tickets = await _dbConnection.QueryAsync<TicketDto>(query);
+                _logger.LogInformation($"Fetched {tickets.AsList().Count} tickets for email: {email}");
+                return tickets.AsList().ToArray();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while fetching tickets for email: {email}");
+                return [];
+            }
         }
 
         public async Task<Guid> CancelReservationAsync(Guid ticketId)
@@ -43,7 +64,7 @@ namespace ReservationService.Services
             }
         }
 
-        public async Task<Guid> CreateReservationAsync(SeatReservation[] seatReservations)
+        public async Task<Guid> CreateReservationAsync(string email, SeatReservation[] seatReservations)
         {
             _logger.LogInformation($"Creating reservation for {seatReservations?.Length ?? 0} seat reservations.");
 
@@ -60,7 +81,7 @@ namespace ReservationService.Services
                 _logger.LogInformation($"Generated TicketId: {ticketId}");
 
                 const string insertTicketSql = INSERT_TICKET_SQL_QUERY;
-                await _dbConnection.ExecuteAsync(insertTicketSql, new { TicketId = ticketId }, transaction);
+                await _dbConnection.ExecuteAsync(insertTicketSql, new { TicketId = ticketId, Email = email }, transaction);
 
                 string insertSegmentSql = INSERT_TICKETS_SEGMENT_SQL_QUERY;
 
@@ -112,8 +133,40 @@ namespace ReservationService.Services
             }
         }
 
+        private const string GET_TICKETS_BY_EMAIL_SQL_QUERY =
+            @"
+                SET DATEFORMAT ymd;
+                WITH RankedSegments AS (
+                    SELECT 
+                        ts.[ticket_id],
+                        ts.[start_station_id],
+                        ts.[end_station_id],
+                        ts.[departure_time],
+                        ts.[arrival_time],
+                        ROW_NUMBER() OVER (
+                            PARTITION BY ts.[ticket_id] 
+                            ORDER BY ts.[segment_number] ASC, ts.[departure_time] ASC
+                        ) AS rn_first,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY ts.[ticket_id] 
+                            ORDER BY ts.[segment_number] DESC, ts.[arrival_time] DESC
+                        ) AS rn_last
+                    FROM [TicketSegments] ts
+                    JOIN [Tickets] t ON t.[id] = ts.[ticket_id]
+                    WHERE t.[email] = '@Email'
+                )
+                SELECT 
+                    [ticket_id] AS TicketId,
+                    MIN([departure_time]) AS DepartureTime,
+                    MAX([arrival_time])   AS ArrivalTime,
+                    MAX(CASE WHEN rn_first = 1 THEN [start_station_id] END) AS FromStationId,
+                    MAX(CASE WHEN rn_last  = 1 THEN [end_station_id]   END) AS ToStationId
+                FROM RankedSegments
+                GROUP BY [ticket_id];
+            ";
+
         private const string INSERT_TICKET_SQL_QUERY =
-            "INSERT INTO [Tickets] ([id]) VALUES (@TicketId);";
+            "INSERT INTO [Tickets] ([id], [email]) VALUES (@TicketId, @Email);";
 
         private const string INSERT_TICKETS_SEGMENT_SQL_QUERY =
             @"

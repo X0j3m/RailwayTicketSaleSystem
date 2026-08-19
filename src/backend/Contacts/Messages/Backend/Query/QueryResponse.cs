@@ -21,4 +21,10 @@ namespace Contracts.Messages.Backend.Query
         public required string ConnectionId { get; init; }
         public required TrainCompositionDto[] Trains { get; init; }
     }
+
+    public record GetTicketsQueryResponse : IQueryResponse
+    {
+        public required string ConnectionId { get; init; }
+        public required TicketDto[] Tickets { get; init; }
+    }
 }

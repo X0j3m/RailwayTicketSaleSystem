@@ -17,6 +17,7 @@ namespace Contracts.Messages.Backend.Command
     public record ReservationCommand : ICommand
     {
         public required string ConnectionId { get; init; }
+        public required string Email { get; init; }
         public required SeatReservation[] SeatReservations { get; init; }
     }
 

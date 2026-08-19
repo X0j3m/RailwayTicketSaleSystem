@@ -1,8 +1,9 @@
 import {sendReservationCommand} from "../../utils/UseReservationCommand.ts";
-import {useLocation} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import type {SeatReservation} from "../../data/Reservation.ts";
 import {useSignalR} from "../../hooks/useSignalR.ts";
 import type {TrainStation} from "../../data/trainStations.ts";
+import {useState} from "react";
 
 export interface TicketSummaryProps {
     trainStations: Array<TrainStation>;
@@ -11,15 +12,24 @@ export interface TicketSummaryProps {
 function TicketSummaryComponent({trainStations}: TicketSummaryProps) {
     const {connection} = useSignalR();
     const location = useLocation();
+    const navigate = useNavigate();
 
     const seatReservations: SeatReservation[] = location.state?.seatReservations;
+    const [email, setEmail] = useState<string>("");
 
     function handleCheckoutClick() {
-        if (!connection) return;
+        if (!connection || !email) return;
 
         sendReservationCommand(
             connection,
+            email,
             seatReservations);
+
+        navigate("/checkout-info", {
+            state: {
+                email
+            }
+        });
     }
 
     const formatDate = (isoDateString: string) => {
@@ -47,7 +57,18 @@ function TicketSummaryComponent({trainStations}: TicketSummaryProps) {
                     </>
                 );
             })}
-            <button onClick={handleCheckoutClick}>Checkout</button>
+            <div>
+                <input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    type="email"
+                    name="email"/>
+            </div>
+            <button
+                onClick={handleCheckoutClick}
+                disabled={!email}>
+                Checkout
+            </button>
         </>
     );
 }

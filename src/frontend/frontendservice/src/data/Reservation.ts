@@ -1,3 +1,4 @@
+
 export interface SeatReservation {
     TrainComposition: string;
     SegmentNumber: number;
@@ -7,4 +8,13 @@ export interface SeatReservation {
     ToStationId: string;
     DepartureTime: string;
     ArrivalTime: string;
+}
+
+export interface ReservationResponse {
+    ConnectionId?: string;
+    MessageItems?: Ticket[];
+}
+
+export interface Ticket {
+    TicketId: string;
 }
