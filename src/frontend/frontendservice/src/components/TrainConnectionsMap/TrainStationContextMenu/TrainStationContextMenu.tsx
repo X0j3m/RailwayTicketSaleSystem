@@ -19,7 +19,12 @@ interface TrainStationContextMenuProps {
     setEndStation: React.Dispatch<React.SetStateAction<string | undefined>>;
 }
 
-function TrainStationContextMenu({contextMenuState, trainStation, setStartStation, setEndStation}: TrainStationContextMenuProps) {
+function TrainStationContextMenu({
+                                     contextMenuState,
+                                     trainStation,
+                                     setStartStation,
+                                     setEndStation
+                                 }: TrainStationContextMenuProps) {
     const [contextMenu, setContextMenu] = contextMenuState;
 
     return <div

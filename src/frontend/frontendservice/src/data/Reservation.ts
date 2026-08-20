@@ -1,4 +1,3 @@
-
 export interface SeatReservation {
     TrainComposition: string;
     SegmentNumber: number;

@@ -3,7 +3,7 @@ import type {TrainStation, StationsMessage} from "../data/trainStations.ts";
 import {useEffect, useState} from "react";
 
 export function useTrainStations() {
-    const { connection } = useSignalR();
+    const {connection} = useSignalR();
     const [trainStations, setStations] = useState<TrainStation[]>([]);
 
     useEffect(() => {
@@ -43,7 +43,7 @@ export function useTrainStations() {
         };
     }, [connection, connection?.state, trainStations.length]);
 
-    return trainStations.sort((a,b) =>
+    return trainStations.sort((a, b) =>
         a.name.localeCompare(b.name)
     );
 }

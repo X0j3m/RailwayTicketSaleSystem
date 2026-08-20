@@ -1,7 +1,7 @@
 .leaflet-tooltip {
-    pointer-events: auto !important;     /* Pozwala myszy wchodzić w interakcję z tooltipem */
-    user-select: text !important;         /* Odblokowuje możliwość zaznaczania tekstu (standard) */
+    pointer-events: auto !important; /* Pozwala myszy wchodzić w interakcję z tooltipem */
+    user-select: text !important; /* Odblokowuje możliwość zaznaczania tekstu (standard) */
     -webkit-user-select: text !important; /* Dla przeglądarek Safari/Chrome */
-    -moz-user-select: text !important;    /* Dla starszych wersji Firefox */
-    cursor: text !important;              /* Zmienia kursor na pionową kreskę (I-beam) */
+    -moz-user-select: text !important; /* Dla starszych wersji Firefox */
+    cursor: text !important; /* Zmienia kursor na pionową kreskę (I-beam) */
 }

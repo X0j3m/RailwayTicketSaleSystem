@@ -81,10 +81,10 @@ function TrainConnectionsMap({
                     />
                 ))}
 
-            {selectedTrainConnection && <TrainConnectionRouteLine
-                trainStations={trainStations}
-                trainConnection={selectedTrainConnection}
-            />}
+                {selectedTrainConnection && <TrainConnectionRouteLine
+                    trainStations={trainStations}
+                    trainConnection={selectedTrainConnection}
+                />}
             </MapContainer>
 
             {contextMenu && <TrainStationContextMenu

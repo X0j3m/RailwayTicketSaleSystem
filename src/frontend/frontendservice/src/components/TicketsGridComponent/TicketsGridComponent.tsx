@@ -52,7 +52,7 @@ function TicketsGridComponent({trainStations}: TicketsGridComponentProps) {
                     TicketId: ticket.TicketId,
                 })) || [];
 
-                const canceledTicketId = parsedData[0].TicketId
+                const canceledTicketId = parsedData[0].TicketId;
 
                 setTickets(tickets.filter((ticket: TicketInfo) => ticket.TicketId != canceledTicketId));
             } catch (error) {
@@ -65,7 +65,7 @@ function TicketsGridComponent({trainStations}: TicketsGridComponentProps) {
         return () => {
             connection.off("ReceiveCancelTicketReservationCommandResponse", handleReceiveCancelTicketReservation);
         };
-    }, [connection]);
+    }, [connection, tickets]);
 
     function handleDeleteButton(ticketId: string) {
         if (!connection) return;
@@ -90,7 +90,7 @@ function TicketsGridComponent({trainStations}: TicketsGridComponentProps) {
                             <td>
                                 <button
                                     onClick={() => handleDeleteButton(ticket.TicketId)}>
-                                    Delete
+                                    Cancel
                                 </button>
                             </td>
                         </tr>

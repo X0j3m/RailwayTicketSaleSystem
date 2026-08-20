@@ -22,7 +22,7 @@ export function sendReservationCommand(
 export function sendCancelReservationCommand(
     connection: HubConnection,
     ticketId: string
-){
+) {
     if (!connection) return;
 
     if (connection.state === "Connected") {
