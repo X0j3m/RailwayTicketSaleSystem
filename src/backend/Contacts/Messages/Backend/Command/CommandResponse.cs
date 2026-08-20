@@ -2,10 +2,6 @@
 
 namespace Contracts.Messages.Backend.Command
 {
-    public record CommandResponse : ICommandResponse
-    {
-        public required string ConnectionId { get; init; }
-    }
     public record TicketReservationCommandResponse : ICommandResponse
     {
         public required string ConnectionId { get; init; }

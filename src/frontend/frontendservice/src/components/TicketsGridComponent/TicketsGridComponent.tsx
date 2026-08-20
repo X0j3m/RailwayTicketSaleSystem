@@ -3,6 +3,7 @@ import {useEffect, useState} from "react";
 import {useSignalR} from "../../hooks/useSignalR.ts";
 import type {TicketInfo, TicketsMessage} from "../../data/Ticket.ts";
 import {sendCancelReservationCommand} from "../../utils/UseReservationCommand.ts";
+import type {ReservationResponse, Ticket} from "../../data/Reservation.ts";
 
 export interface TicketsGridComponentProps {
     trainStations: Array<TrainStation>;
@@ -25,7 +26,7 @@ function TicketsGridComponent({trainStations}: TicketsGridComponentProps) {
                     FromStationId: ticket.FromStationId,
                     ToStationId: ticket.ToStationId,
                 })) || [];
-                console.log(parsedData);
+
                 if (parsedData) {
                     setTickets(parsedData);
                 }
@@ -38,6 +39,31 @@ function TicketsGridComponent({trainStations}: TicketsGridComponentProps) {
 
         return () => {
             connection.off("ReceiveGetTicketsQueryResponse", handleReceiveGetTickets);
+        };
+    }, [connection]);
+
+    useEffect(() => {
+        if (!connection) return;
+
+        const handleReceiveCancelTicketReservation = (data: string) => {
+            try {
+                const rawData: ReservationResponse = JSON.parse(data);
+                const parsedData: Ticket[] = rawData?.MessageItems?.map((ticket: Ticket) => ({
+                    TicketId: ticket.TicketId,
+                })) || [];
+
+                const canceledTicketId = parsedData[0].TicketId
+
+                setTickets(tickets.filter((ticket: TicketInfo) => ticket.TicketId != canceledTicketId));
+            } catch (error) {
+                console.error("Error parsing stations:", error);
+            }
+        };
+
+        connection.on("ReceiveCancelTicketReservationCommandResponse", handleReceiveCancelTicketReservation);
+
+        return () => {
+            connection.off("ReceiveCancelTicketReservationCommandResponse", handleReceiveCancelTicketReservation);
         };
     }, [connection]);
 
