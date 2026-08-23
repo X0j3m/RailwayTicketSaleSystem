@@ -1,5 +1,6 @@
 ﻿using Contracts.Messages.Backend.Command;
 using Dapper;
+using Microsoft.Data.SqlClient;
 using Models.Dtos;
 using ReservationService.Model;
 using System.Data;
@@ -9,81 +10,111 @@ namespace ReservationService.Services
     public class ReservationService
     {
         private readonly ILogger<ReservationService> _logger;
-        private readonly IDbConnection _dbConnection;
+        private readonly string _connectionString;
 
-        public ReservationService(ILogger<ReservationService> logger, IDbConnection dbConnection)
+        public ReservationService(ILogger<ReservationService> logger, IConfiguration configuration)
         {
             _logger = logger;
-            _dbConnection = dbConnection;
+            _connectionString = configuration.GetConnectionString("MicrosoftSQLServer")
+                ?? throw new ArgumentNullException("MicrosoftSQLServer");
         }
 
-        public async Task<TicketDto[]> GetTicketsByEmailAsync(string email)
+        public async Task<TicketDto[]> GetTicketsByEmailAsync(string email, CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"Fetching tickets for email: {email}");
-            if (_dbConnection.State != ConnectionState.Open)
-            {
-                _dbConnection.Open();
-            }
+            _logger.LogInformation("Fetching tickets for email: {Email}", email);
+
             try
             {
-                var query = GET_TICKETS_BY_EMAIL_SQL_QUERY.Replace("@Email", email);
-                var tickets = await _dbConnection.QueryAsync<TicketDto>(query);
-                _logger.LogInformation($"Fetched {tickets.AsList().Count} tickets for email: {email}");
-                return tickets.AsList().ToArray();
+                await using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync(cancellationToken);
+
+                var getTicketsCmd = new CommandDefinition(
+                    commandText: GET_TICKETS_BY_EMAIL_SQL_QUERY,
+                    parameters: new { Email = email },
+                    commandTimeout: 5,
+                    cancellationToken: cancellationToken
+                );
+
+                var tickets = await connection.QueryAsync<TicketDto>(getTicketsCmd);
+                var result = tickets.ToArray();
+
+                _logger.LogInformation("Fetched {Count} tickets for email: {Email}", result.Length, email);
+                return result;
+            }
+            catch (SqlException ex) when (ex.Number == -2)
+            {
+                _logger.LogWarning(ex, "SQL Timeout while fetching tickets for email: {Email}", email);
+                throw new TimeoutException($"Database query timed out for email: {email}", ex);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Fetching tickets for email {Email} was canceled by MassTransit timeout.", email);
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error occurred while fetching tickets for email: {email}");
-                return [];
+                _logger.LogError(ex, "Unexpected error occurred while fetching tickets for email: {Email}", email);
+                throw;
             }
         }
 
-        public async Task<Guid> CancelReservationAsync(Guid ticketId)
+        public async Task<Guid> CancelReservationAsync(Guid ticketId, CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"Cancelling reservation for TicketId: {ticketId}");
-            if (_dbConnection.State != ConnectionState.Open)
-            {
-                _dbConnection.Open();
-            }
-            using var transaction = _dbConnection.BeginTransaction();
+            await using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
+
             try
             {
-                const string deleteSegmentsSql = "DELETE FROM [TicketSegments] WHERE [ticket_id] = @TicketId;";
-                await _dbConnection.ExecuteAsync(deleteSegmentsSql, new { TicketId = ticketId }, transaction);
-                const string deleteTicketSql = "DELETE FROM [Tickets] WHERE [id] = @TicketId;";
-                await _dbConnection.ExecuteAsync(deleteTicketSql, new { TicketId = ticketId }, transaction);
-                transaction.Commit();
-                _logger.LogInformation($"Reservation cancelled successfully for TicketId: {ticketId}");
+                var cancelTicketCmd = new CommandDefinition(
+                    commandText: CANCEL_TICKET_SQL_QUERY,
+                    parameters: new { TicketId = ticketId },
+                    transaction: transaction,
+                    commandTimeout: 5,
+                    cancellationToken: cancellationToken
+                );
+
+                await connection.ExecuteAsync(cancelTicketCmd);
+                await transaction.CommitAsync(cancellationToken);
                 return ticketId;
             }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("Reservation cancellation cancelled due to timeout/cancellation token. Rolling back.");
+                await transaction.RollbackAsync(CancellationToken.None);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error occurred while cancelling reservation for TicketId: {ticketId}. Performing Rollback.");
-                transaction.Rollback();
-                return Guid.Empty;
+                _logger.LogError(ex, "Error occurred while canceling reservation. Performing Rollback.");
+                await transaction.RollbackAsync(CancellationToken.None);
+                throw;
             }
         }
 
-        public async Task<Guid> CreateReservationAsync(string email, SeatReservation[] seatReservations)
+        public async Task<Guid> CreateReservationAsync(string email, SeatReservation[] seatReservations, CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"Creating reservation for {seatReservations?.Length ?? 0} seat reservations.");
+            _logger.LogInformation("Creating reservation for {Count} seat reservations.", seatReservations?.Length ?? 0);
 
-            if (_dbConnection.State != ConnectionState.Open)
-            {
-                _dbConnection.Open();
-            }
+            await using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
 
-            using var transaction = _dbConnection.BeginTransaction();
+            await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
 
             try
             {
                 var ticketId = Guid.NewGuid();
-                _logger.LogInformation($"Generated TicketId: {ticketId}");
+                _logger.LogInformation("Generated TicketId: {TicketId}", ticketId);
 
-                const string insertTicketSql = INSERT_TICKET_SQL_QUERY;
-                await _dbConnection.ExecuteAsync(insertTicketSql, new { TicketId = ticketId, Email = email }, transaction);
-
-                string insertSegmentSql = INSERT_TICKETS_SEGMENT_SQL_QUERY;
+                var insertTicketCmd = new CommandDefinition(
+                    commandText: INSERT_TICKET_SQL_QUERY,
+                    parameters: new { TicketId = ticketId, Email = email },
+                    transaction: transaction,
+                    commandTimeout: 5,
+                    cancellationToken: cancellationToken
+                );
+                await connection.ExecuteAsync(insertTicketCmd);
 
                 foreach (var reservation in seatReservations)
                 {
@@ -101,37 +132,71 @@ namespace ReservationService.Services
                         EndStationId = reservation.ToStationId,
                     };
 
-                    _logger.LogInformation(
-                        $"Trying to insert segment: Id: {entity.Id}, TicketId: {entity.TicketId}, SegmentNumber: {entity.SegmentNumber}, " +
-                        $"TrainCompositionId: {entity.TrainCompositionId}, CarNumber: {entity.CarNumber}, SeatNumber: {entity.SeatNumber}, " +
-                        $"DepartureTime: {entity.DepartureTime:yyyy-MM-dd HH:mm:ss.fff}, ArrivalTime: {entity.ArrivalTime:yyyy-MM-dd HH:mm:ss.fff}, " +
-                        $"StartStationId: {entity.StartStationId}, EndStationId: {entity.EndStationId}");
+                    var insertSegmentCmd = new CommandDefinition(
+                        commandText: INSERT_TICKETS_SEGMENT_SQL_QUERY,
+                        parameters: entity,
+                        transaction: transaction,
+                        commandTimeout: 5,
+                        cancellationToken: cancellationToken
+                    );
 
-                    var rowsAffected = await _dbConnection.ExecuteAsync(insertSegmentSql, entity, transaction);
+                    var rowsAffected = await connection.ExecuteAsync(insertSegmentCmd);
 
                     if (rowsAffected == 0)
                     {
-                        _logger.LogWarning(
-                            $"RESERVATION COLLISION! Segment not saved. Seat {entity.SeatNumber} in car {entity.CarNumber} is already reserved " +
-                            $"for the time interval {entity.DepartureTime:yyyy-MM-dd HH:mm:ss.fff} - {entity.ArrivalTime:yyyy-MM-dd HH:mm:ss.fff} " +
-                            $"for train composition {entity.TrainCompositionId}.");
-
-                        throw new InvalidOperationException(
-                            $"Seat {reservation.SeatNumber} in car {reservation.CarNumber} is already reserved in the specified time interval.");
+                        _logger.LogWarning("RESERVATION COLLISION! Seat {Seat} in car {Car} is already reserved.", entity.SeatNumber, entity.CarNumber);
+                        throw new InvalidOperationException($"Seat {reservation.SeatNumber} in car {reservation.CarNumber} is already reserved.");
                     }
                 }
 
-                transaction.Commit();
-                _logger.LogInformation($"Reservation transaction committed successfully for TicketId: {ticketId}");
+                await transaction.CommitAsync(cancellationToken);
+                _logger.LogInformation("Reservation committed successfully for TicketId: {TicketId}", ticketId);
                 return ticketId;
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("Reservation cancelled due to timeout/cancellation token. Rolling back.");
+                await transaction.RollbackAsync(CancellationToken.None);
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while creating reservation. Performing Rollback.");
-                transaction.Rollback();
-                return Guid.Empty;
+                await transaction.RollbackAsync(CancellationToken.None);
+                throw;
             }
         }
+
+        private const string CANCEL_TICKET_SQL_QUERY =
+            @"
+                UPDATE [Tickets]
+                SET [status] = 'CANCELED'
+                WHERE [id] = @TicketId
+            ";
+
+        private const string INSERT_TICKET_SQL_QUERY =
+            "INSERT INTO [Tickets] ([id], [email], [status]) VALUES (@TicketId, @Email, 'CREATED');";
+
+        private const string INSERT_TICKETS_SEGMENT_SQL_QUERY =
+            @"
+                INSERT INTO [TicketSegments] (
+                    [id], [ticket_id], [segment_number], [train_composition_id],
+                    [car_number], [seat_number], [departure_time], [arrival_time],
+                    [start_station_id], [end_station_id])
+                SELECT 
+                    @Id, @TicketId, @SegmentNumber, @TrainCompositionId,
+                    @CarNumber, @SeatNumber, @DepartureTime, @ArrivalTime,
+                    @StartStationId, @EndStationId
+                WHERE NOT EXISTS (
+                    SELECT 1 
+                    FROM [TicketSegments] WITH (UPDLOCK, HOLDLOCK)
+                    WHERE
+                        [train_composition_id] = @TrainCompositionId
+                        AND [car_number] = @CarNumber
+                        AND [seat_number] = @SeatNumber
+                        AND [departure_time] < @ArrivalTime
+                        AND [arrival_time] > @DepartureTime
+                );";
 
         private const string GET_TICKETS_BY_EMAIL_SQL_QUERY =
             @"
@@ -153,7 +218,7 @@ namespace ReservationService.Services
                         ) AS rn_last
                     FROM [TicketSegments] ts
                     JOIN [Tickets] t ON t.[id] = ts.[ticket_id]
-                    WHERE t.[email] = '@Email'
+                    WHERE t.[email] = @Email
                 )
                 SELECT 
                     [ticket_id] AS TicketId,
@@ -165,46 +230,5 @@ namespace ReservationService.Services
                 GROUP BY [ticket_id];
             ";
 
-        private const string INSERT_TICKET_SQL_QUERY =
-            "INSERT INTO [Tickets] ([id], [email]) VALUES (@TicketId, @Email);";
-
-        private const string INSERT_TICKETS_SEGMENT_SQL_QUERY =
-            @"
-                INSERT INTO [TicketSegments] (
-                    [id],
-                    [ticket_id],
-                    [segment_number],
-                    [train_composition_id],
-                    [car_number],
-                    [seat_number],
-                    [departure_time],
-                    [arrival_time],
-                    [start_station_id],
-                    [end_station_id])
-                    SELECT 
-                        @Id,
-                        @TicketId,
-                        @SegmentNumber,
-                        @TrainCompositionId,
-                        @CarNumber,
-                        @SeatNumber,
-                        @DepartureTime,
-                        @ArrivalTime,
-                        @StartStationId,
-                        @EndStationId
-                    WHERE NOT EXISTS (
-                        SELECT 1 
-                        FROM [TicketSegments] WITH (UPDLOCK, HOLDLOCK)
-                        WHERE
-                            [train_composition_id] = @TrainCompositionId
-                            AND
-                            [car_number] = @CarNumber
-                            AND
-                            [seat_number] = @SeatNumber
-                            AND
-                            [departure_time] < @ArrivalTime
-                            AND
-                            [arrival_time] > @DepartureTime)
-                ;";
     }
 }

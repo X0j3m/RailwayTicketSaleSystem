@@ -52,9 +52,10 @@ function CheckoutInfoComponent() {
     return (
         <>
             {
-                ticket
-                &&
-                ticket.TicketId == "00000000-0000-0000-0000-000000000000"
+                ticket == null ?
+                    <p>Processing</p>
+                    :
+                    ticket.TicketId == "00000000-0000-0000-0000-000000000000"
                     ?
                     <p>Fail</p>
                     :

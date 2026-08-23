@@ -22,16 +22,16 @@ namespace TrainFleetService.Service
 
         public async Task<List<TrainStationDto>> GetStationsAsync()
         {
-            var sql = GetTrainStationsQueryString();
+            var sql = TRAIN_STATIONS_QUERY_STRING;
             var stations = await _dbConnection.QueryAsync<TrainStationDto>(sql);
             return stations.ToList();
         }
 
         public async Task<TrainCompositionDto> GetTrainCompositionAsync(GetTrainCompositionAvailableSeatsQuery query)
         {
-            var seatsSql = GetSeatsInfoQueryString();
-            var trainSql = GetTrainInfoQueryString();
-            var occupiedSeatsSql = GetOccupiedSeatsQueryString();
+            var seatsSql = SEATS_INFO_QUERY_STRING;
+            var trainSql = TRAIN_INFO_QUERY_STRING;
+            var occupiedSeatsSql = OCCUPIED_SEATS_QUERY_STRING;
 
             var trainSeats = await _dbConnection.QueryAsync<TrainCompositionSeatInfoDto>(
                 seatsSql,
@@ -95,9 +95,9 @@ namespace TrainFleetService.Service
             };
         }
 
-        private string GetTrainStationsQueryString()
-        {
-            return @"
+
+        private const string TRAIN_STATIONS_QUERY_STRING =
+            @"
                 SELECT
                     [id] AS Id,
                     [city] AS City,
@@ -106,11 +106,9 @@ namespace TrainFleetService.Service
                     [longitude] AS Longitude
                FROM [TrainStations];
             ";
-        }
 
-        private string GetOccupiedSeatsQueryString()
-        {
-            return @"
+        private const string OCCUPIED_SEATS_QUERY_STRING =
+            @"
                 SET DATEFORMAT ymd;
                 SELECT 
                     [car_number] AS CarNumber,
@@ -125,11 +123,9 @@ namespace TrainFleetService.Service
                     [arrival_time] > @departureTime
                 ORDER BY car_number, seat_number;
             ";
-        }
 
-        private string GetSeatsInfoQueryString()
-        {
-            return @"
+        private const string SEATS_INFO_QUERY_STRING =
+            @"
                 SELECT
                     TrainCompositions_Cars.[car_number] AS CarNumber,
                     Seats.[number] AS SeatNumber,
@@ -143,11 +139,9 @@ namespace TrainFleetService.Service
                 WHERE TrainCompositions.id = @trainCompositionId
                 ORDER BY TrainCompositions_Cars.car_number, Seats.number;
             ";
-        }
 
-        private string GetTrainInfoQueryString()
-        {
-            return @"
+        private const string TRAIN_INFO_QUERY_STRING =
+            @"
                 SELECT Trains.[type] AS TrainType,
                        Trains.[number] AS TrainNumber
                 FROM Trains
@@ -155,6 +149,5 @@ namespace TrainFleetService.Service
                   ON TrainCompositions.train_id = Trains.id
                 WHERE TrainCompositions.id = @trainCompositionId;
             ";
-        }
     }
 }

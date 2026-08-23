@@ -16,7 +16,8 @@ namespace TimetableService.Services
         }
 
         public async Task<TrainConnectionsDtoPage> GetTrainConnections(
-            TrainSearchCriteria criteria)
+            TrainSearchCriteria criteria,
+            CancellationToken token)
         {
             string sourceStationId = criteria.SourceStationId;
             string targetStationId = criteria.TargetStationId;
@@ -27,7 +28,7 @@ namespace TimetableService.Services
             int pageSize = criteria.PageSize;
             int pageNumber = criteria.PageNumber;
 
-            var query = GetTrainConnectionsQueryString();
+            var query = TRAN_CONNECTIONS_QUERY_STRING;
 
             if (!TimeSpan.TryParse(departureTime, out var depTimeSpan))
             {
@@ -55,6 +56,8 @@ namespace TimetableService.Services
 
                 while (await resultCursor.FetchAsync())
                 {
+                    token.ThrowIfCancellationRequested();
+
                     var record = resultCursor.Current;
 
                     var totalConnectionsCount = record["total_connections_count"].As<int>();
@@ -108,10 +111,27 @@ namespace TimetableService.Services
                     result.Add(trainConnectionDto);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                _logger.LogError("Timeout was reached");
+                return new TrainConnectionsDtoPage
+                {
+                    NumberOfPages = -1,
+                    PageNumber = -1,
+                    PageSize = -1,
+                    Connections = []
+                };
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                throw;
+                return new TrainConnectionsDtoPage
+                {
+                    NumberOfPages = 0,
+                    PageNumber = 0,
+                    PageSize = 0,
+                    Connections = []
+                };
             }
 
             return new TrainConnectionsDtoPage
@@ -123,9 +143,8 @@ namespace TimetableService.Services
             };
         }
 
-        private string GetTrainConnectionsQueryString()
-        {
-            return @"
+        private const string TRAN_CONNECTIONS_QUERY_STRING =
+            @"
             WITH
                 toLower($sourceStationId) AS sourceStationId,
                 toLower($targetStationId) AS targetStationId,
@@ -206,6 +225,5 @@ namespace TimetableService.Services
             SKIP $pageNumber * $pageSize
             LIMIT $pageSize
             ";
-        }
     }
 }

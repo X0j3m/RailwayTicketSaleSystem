@@ -1,24 +1,14 @@
 using Contracts;
 using MassTransit;
-using Microsoft.Data.SqlClient;
 using ReservationService.QueueHandlers;
 using ReservationsService.QueueHandler;
-using System.Data;
 
 Console.WriteLine("Starting ReservationService");
 
 var builder = Host.CreateApplicationBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("MicrosoftSQLServer") ?? throw new ArgumentNullException("MicrosoftSQLServer");
-
 builder.Services.AddHealthChecks();
-
-builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
 builder.Services.AddScoped<ReservationService.Services.ReservationService>();
-
-builder.Services.AddScoped<ReservationCommandConsumer>();
-builder.Services.AddScoped<CancelReservationCommandConsumer>();
-builder.Services.AddScoped<GetTicketsQueryConsumer>();
 
 builder.Services.AddMassTransit(x =>
 {
@@ -38,10 +28,19 @@ builder.Services.AddMassTransit(x =>
             h.Password(password);
         });
 
-        var queueName = QueueNames.ReservationServiceQueue;
-        cfg.ReceiveEndpoint(queueName, e =>
+        cfg.ReceiveEndpoint(QueueNames.ReservationQueue, e =>
         {
             e.ConfigureConsumeTopology = false;
+
+            e.UseTimeout(t => t.Timeout = TimeSpan.FromSeconds(5));
+
+            e.UseMessageRetry(r =>
+            {
+                r.Interval(3, TimeSpan.FromSeconds(5));
+                r.Handle<TimeoutException>();
+                r.Handle<OperationCanceledException>();
+            });
+
             e.ConfigureConsumer<ReservationCommandConsumer>(context);
             e.ConfigureConsumer<CancelReservationCommandConsumer>(context);
             e.ConfigureConsumer<GetTicketsQueryConsumer>(context);

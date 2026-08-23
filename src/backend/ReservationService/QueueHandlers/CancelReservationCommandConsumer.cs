@@ -22,11 +22,12 @@ namespace ReservationsService.QueueHandler
         public async Task Consume(ConsumeContext<CancelReservationCommand> context)
         {
             var message = context.Message;
+            var cancellationToken = context.CancellationToken;
             var connsectionId = message.ConnectionId;
             var ticketId = message.TicketId;
             _logger.LogInformation($"Received CancelReservationCommand: ReservationId = {message.TicketId}");
 
-            var canceledTicketId = await _reservationService.CancelReservationAsync(ticketId);
+            var canceledTicketId = await _reservationService.CancelReservationAsync(ticketId, cancellationToken);
 
             await _endpoint.Publish(new CancelTicketReservationCommandResponse
             {

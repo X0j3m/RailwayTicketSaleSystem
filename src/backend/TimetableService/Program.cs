@@ -38,11 +38,12 @@ builder.Services.AddMassTransit(x =>
             h.Password(password);
         });
 
-        var queueName = QueueNames.TimetableServiceQueue;
+        var queueName = QueueNames.TimetableQueue;
         cfg.ReceiveEndpoint(queueName, e =>
         {
             e.ConfigureConsumeTopology = false;
             e.ConfigureConsumer<GetTrainConnectionsQueryConsumer>(context);
+            e.UseTimeout(t => t.Timeout = TimeSpan.FromSeconds(30));
         });
     });
 });

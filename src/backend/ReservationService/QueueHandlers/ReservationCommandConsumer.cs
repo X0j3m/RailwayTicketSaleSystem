@@ -6,36 +6,33 @@ namespace ReservationsService.QueueHandler
     public class ReservationCommandConsumer : IConsumer<ReservationCommand>
     {
         private readonly ILogger<ReservationCommandConsumer> _logger;
-        private readonly IPublishEndpoint _endpoint;
         private readonly ReservationService.Services.ReservationService _reservationService;
 
         public ReservationCommandConsumer(
             ILogger<ReservationCommandConsumer> logger,
-            IPublishEndpoint endpoint,
             ReservationService.Services.ReservationService reservationService)
         {
             _logger = logger;
-            _endpoint = endpoint;
             _reservationService = reservationService;
         }
 
         public async Task Consume(ConsumeContext<ReservationCommand> context)
         {
             var message = context.Message;
+            _logger.LogInformation("Processing ReservationCommand for ConnectionId={ConnectionId}", message.ConnectionId);
 
-            var connsectionId = message.ConnectionId;
-            var email = message.Email;
-            var seatReservations = message.SeatReservations;
-            _logger.LogInformation($"Received ReservationCommand from ConnectionId={message.ConnectionId}: Number of seat reservations={message.SeatReservations.Length}");
+            var ticketId = await _reservationService.CreateReservationAsync(
+                message.Email,
+                message.SeatReservations,
+                context.CancellationToken);
 
-            var ticketId = await _reservationService.CreateReservationAsync(email, seatReservations);
-
-            await _endpoint.Publish(new TicketReservationCommandResponse
+            await context.Publish(new TicketReservationCommandResponse
             {
                 ConnectionId = message.ConnectionId,
                 TicketId = ticketId
-            });
-            _logger.LogInformation($"Published response for ConnectionId={message.ConnectionId} for command: {message.GetType().Name}");
+            }, context.CancellationToken);
+
+            _logger.LogInformation("Published TicketReservationCommandResponse for ConnectionId={ConnectionId}", message.ConnectionId);
         }
     }
 }

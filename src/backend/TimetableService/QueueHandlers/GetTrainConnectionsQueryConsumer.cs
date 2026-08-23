@@ -24,6 +24,7 @@ namespace TimetableService.QueueHandler
         public async Task Consume(ConsumeContext<GetTrainConnectionsQuery> context)
         {
             var message = context.Message;
+            var cancellationToken = context.CancellationToken;
             var connectionId = message.ConnectionId;
 
             var sourceStationId = message.StartStation.ToString();
@@ -46,7 +47,7 @@ namespace TimetableService.QueueHandler
                 PageNumber = pageNumber
             };
 
-            var resultsPage = await _scheduleService.GetTrainConnections(searchCriteria);
+            var resultsPage = await _scheduleService.GetTrainConnections(searchCriteria, cancellationToken);
 
             await _endpoint.Publish(new TrainConnectionsQueryResponse
             {

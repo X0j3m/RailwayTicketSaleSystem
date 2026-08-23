@@ -22,12 +22,14 @@ namespace ReservationService.QueueHandlers
         public async Task Consume(ConsumeContext<GetTicketsQuery> context)
         {
             var message = context.Message;
+            var cancellationToken = context.CancellationToken;
+
             var connectionId = message.ConnectionId;
             var email = message.Email;
 
             _logger.LogInformation($"Received GetTicketsQuery: Email = {email}");
 
-            var tickets = await _reservationService.GetTicketsByEmailAsync(email);
+            var tickets = await _reservationService.GetTicketsByEmailAsync(email, cancellationToken);
 
             await _endpoint.Publish(new GetTicketsQueryResponse
             {

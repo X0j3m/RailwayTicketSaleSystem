@@ -27,42 +27,42 @@ namespace WebAPI.Hubs
         {
             var connectionId = query.ConnectionId;
             _logger.LogInformation($"Sending GetStationsQuery from connectionId={connectionId}");
-            await _querySender.SendQueryAsync(query, QueueNames.TrainFleetServiceQueue);
+            await _querySender.SendQueryAsync(query, QueueNames.TrainFleetQueue);
         }
 
         public async Task GetTrainCompositions(GetAvailableSeatsQuery query)
         {
             var connectionId = query.ConnectionId;
             _logger.LogInformation($"Sending GetAvailableSeatsQuery from connectionId={connectionId}");
-            await _querySender.SendQueryAsync(query, QueueNames.TrainFleetServiceQueue);
+            await _querySender.SendQueryAsync(query, QueueNames.TrainFleetQueue);
         }
 
         public async Task GetTrainConnections(GetTrainConnectionsQuery query)
         {
             var connectionId = query.ConnectionId;
             _logger.LogInformation($"Sending GetTrainConnectionsQuery from connectionId={connectionId}");
-            await _querySender.SendQueryAsync(query, QueueNames.TimetableServiceQueue);
+            await _querySender.SendQueryAsync(query, QueueNames.TimetableQueue);
         }
 
         public async Task GetTickets(GetTicketsQuery query)
         {
             var connectionId = query.ConnectionId;
             _logger.LogInformation($"Sending GetTicketsQuery from connectionId={connectionId}");
-            await _querySender.SendQueryAsync(query, QueueNames.ReservationServiceQueue);
+            await _querySender.SendQueryAsync(query, QueueNames.ReservationQueue);
         }
 
         public async Task CreateReservation(ReservationCommand command)
         {
             var connectionId = command.ConnectionId;
             _logger.LogInformation($"Sending CreateReservationCommand from connectionId={connectionId}");
-            await _commandSender.SendCommandAsync(command, QueueNames.ReservationServiceQueue);
+            await _commandSender.SendCommandAsync(command, QueueNames.ReservationQueue);
         }
 
         public async Task CancelReservation(CancelReservationCommand command)
         {
             var connectionId = command.ConnectionId;
             _logger.LogInformation($"Sending CancelReservationCommand from connectionId={connectionId}");
-            await _commandSender.SendCommandAsync(command, QueueNames.ReservationServiceQueue);
+            await _commandSender.SendCommandAsync(command, QueueNames.ReservationQueue);
         }
     }
 }
