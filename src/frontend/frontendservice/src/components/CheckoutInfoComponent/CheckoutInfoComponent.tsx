@@ -1,17 +1,13 @@
 import {useSignalR} from "../../hooks/useSignalR.ts";
 import {useEffect, useState} from "react";
 import type {ReservationResponse, Ticket} from "../../data/Reservation.ts";
-import {useLocation, useNavigate} from "react-router-dom";
-import {sendTicketsQuery} from "../../utils/UseTickets.ts";
+import {useNavigate} from "react-router-dom";
 
 function CheckoutInfoComponent() {
     const {connection} = useSignalR();
     const navigate = useNavigate();
-    const location = useLocation();
 
     const [ticket, setTicket] = useState<Ticket | null>(null);
-
-    const email: string = location.state?.email;
 
     useEffect(() => {
         if (!connection) return;
@@ -39,14 +35,8 @@ function CheckoutInfoComponent() {
         };
     }, [connection, ticket]);
 
-    function handleTicketsClick() {
-        if (!connection) return;
-
-        sendTicketsQuery(
-            connection,
-            email);
-
-        navigate("/tickets");
+    function handleHomeClick() {
+        navigate("/");
     }
 
     return (
@@ -56,15 +46,16 @@ function CheckoutInfoComponent() {
                     <p>Processing</p>
                     :
                     ticket.TicketId == "00000000-0000-0000-0000-000000000000"
-                    ?
-                    <p>Fail</p>
-                    :
-                    <p>Success</p>
+                        ?
+                        <p>Fail</p>
+                        :
+                        <p>Success</p>
             }
             <button
                 type="button"
-                onClick={handleTicketsClick}>
-                My tickets
+                disabled={ticket == null}
+                onClick={handleHomeClick}>
+                Go Home
             </button>
         </>
     );

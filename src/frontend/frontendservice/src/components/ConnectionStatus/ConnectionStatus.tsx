@@ -3,7 +3,7 @@ import {type ChangeEvent, useEffect, useState} from "react";
 
 function ConnectionStatus() {
     const {connection, isConnected} = useSignalR();
-    const [devMode, setDevMode] = useState<boolean>(true);
+    const [devMode, setDevMode] = useState<boolean>(false);
 
     const myConnectionId = connection?.connectionId || '';
 

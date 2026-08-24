@@ -170,7 +170,7 @@ namespace ReservationService.Services
         private const string CANCEL_TICKET_SQL_QUERY =
             @"
                 UPDATE [Tickets]
-                SET [status] = 'CANCELED'
+                SET [status] = 'CANCELLED'
                 WHERE [id] = @TicketId
             ";
 
@@ -178,57 +178,60 @@ namespace ReservationService.Services
             "INSERT INTO [Tickets] ([id], [email], [status]) VALUES (@TicketId, @Email, 'CREATED');";
 
         private const string INSERT_TICKETS_SEGMENT_SQL_QUERY =
-            @"
-                INSERT INTO [TicketSegments] (
-                    [id], [ticket_id], [segment_number], [train_composition_id],
-                    [car_number], [seat_number], [departure_time], [arrival_time],
-                    [start_station_id], [end_station_id])
-                SELECT 
-                    @Id, @TicketId, @SegmentNumber, @TrainCompositionId,
-                    @CarNumber, @SeatNumber, @DepartureTime, @ArrivalTime,
-                    @StartStationId, @EndStationId
-                WHERE NOT EXISTS (
-                    SELECT 1 
-                    FROM [TicketSegments] WITH (UPDLOCK, HOLDLOCK)
-                    WHERE
-                        [train_composition_id] = @TrainCompositionId
-                        AND [car_number] = @CarNumber
-                        AND [seat_number] = @SeatNumber
-                        AND [departure_time] < @ArrivalTime
-                        AND [arrival_time] > @DepartureTime
-                );";
+        @"
+            INSERT INTO [TicketSegments] (
+                [id], [ticket_id], [segment_number], [train_composition_id],
+                [car_number], [seat_number], [departure_time], [arrival_time],
+                [start_station_id], [end_station_id])
+            SELECT 
+                @Id, @TicketId, @SegmentNumber, @TrainCompositionId,
+                @CarNumber, @SeatNumber, @DepartureTime, @ArrivalTime,
+                @StartStationId, @EndStationId
+            WHERE NOT EXISTS (
+                SELECT 1 
+                FROM [TicketSegments] ts WITH (UPDLOCK, HOLDLOCK)
+                JOIN [Tickets] t WITH (UPDLOCK, HOLDLOCK) ON t.[id] = ts.[ticket_id]
+                WHERE
+                    ts.[train_composition_id] = @TrainCompositionId
+                    AND ts.[car_number] = @CarNumber
+                    AND ts.[seat_number] = @SeatNumber
+                    AND ts.[departure_time] < @ArrivalTime
+                    AND ts.[arrival_time] > @DepartureTime
+                    AND (t.[status] != 'CANCELLED' OR t.[status] IS NULL)
+            );
+        ";
 
         private const string GET_TICKETS_BY_EMAIL_SQL_QUERY =
-            @"
-                SET DATEFORMAT ymd;
-                WITH RankedSegments AS (
-                    SELECT 
-                        ts.[ticket_id],
-                        ts.[start_station_id],
-                        ts.[end_station_id],
-                        ts.[departure_time],
-                        ts.[arrival_time],
-                        ROW_NUMBER() OVER (
-                            PARTITION BY ts.[ticket_id] 
-                            ORDER BY ts.[segment_number] ASC, ts.[departure_time] ASC
-                        ) AS rn_first,
-                        ROW_NUMBER() OVER (
-                            PARTITION BY ts.[ticket_id] 
-                            ORDER BY ts.[segment_number] DESC, ts.[arrival_time] DESC
-                        ) AS rn_last
-                    FROM [TicketSegments] ts
-                    JOIN [Tickets] t ON t.[id] = ts.[ticket_id]
-                    WHERE t.[email] = @Email
-                )
+        @"
+            SET DATEFORMAT ymd;
+            WITH RankedSegments AS (
                 SELECT 
-                    [ticket_id] AS TicketId,
-                    MIN([departure_time]) AS DepartureTime,
-                    MAX([arrival_time])   AS ArrivalTime,
-                    MAX(CASE WHEN rn_first = 1 THEN [start_station_id] END) AS FromStationId,
-                    MAX(CASE WHEN rn_last  = 1 THEN [end_station_id]   END) AS ToStationId
-                FROM RankedSegments
-                GROUP BY [ticket_id];
-            ";
-
+                    ts.[ticket_id],
+                    ts.[start_station_id],
+                    ts.[end_station_id],
+                    ts.[departure_time],
+                    ts.[arrival_time],
+                    ROW_NUMBER() OVER (
+                        PARTITION BY ts.[ticket_id] 
+                        ORDER BY ts.[segment_number] ASC, ts.[departure_time] ASC
+                    ) AS rn_first,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY ts.[ticket_id] 
+                        ORDER BY ts.[segment_number] DESC, ts.[arrival_time] DESC
+                    ) AS rn_last
+                FROM [TicketSegments] ts
+                JOIN [Tickets] t ON t.[id] = ts.[ticket_id]
+                WHERE t.[email] = @Email
+                  AND (t.[status] != 'CANCELLED' OR t.[status] IS NULL)
+            )
+            SELECT 
+                [ticket_id] AS TicketId,
+                MIN([departure_time]) AS DepartureTime,
+                MAX([arrival_time])   AS ArrivalTime,
+                MAX(CASE WHEN rn_first = 1 THEN [start_station_id] END) AS FromStationId,
+                MAX(CASE WHEN rn_last  = 1 THEN [end_station_id]   END) AS ToStationId
+            FROM RankedSegments
+            GROUP BY [ticket_id];
+        ";
     }
 }

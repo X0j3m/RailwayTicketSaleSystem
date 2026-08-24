@@ -34,13 +34,6 @@ builder.Services.AddMassTransit(x =>
 
             e.UseTimeout(t => t.Timeout = TimeSpan.FromSeconds(5));
 
-            e.UseMessageRetry(r =>
-            {
-                r.Interval(3, TimeSpan.FromSeconds(5));
-                r.Handle<TimeoutException>();
-                r.Handle<OperationCanceledException>();
-            });
-
             e.ConfigureConsumer<ReservationCommandConsumer>(context);
             e.ConfigureConsumer<CancelReservationCommandConsumer>(context);
             e.ConfigureConsumer<GetTicketsQueryConsumer>(context);

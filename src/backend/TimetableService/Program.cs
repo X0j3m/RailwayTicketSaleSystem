@@ -43,7 +43,7 @@ builder.Services.AddMassTransit(x =>
         {
             e.ConfigureConsumeTopology = false;
             e.ConfigureConsumer<GetTrainConnectionsQueryConsumer>(context);
-            e.UseTimeout(t => t.Timeout = TimeSpan.FromSeconds(30));
+            e.UseTimeout(t => t.Timeout = TimeSpan.FromSeconds(20));
         });
     });
 });

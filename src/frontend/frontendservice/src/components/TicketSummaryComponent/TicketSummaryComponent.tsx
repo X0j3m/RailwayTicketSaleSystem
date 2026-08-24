@@ -3,7 +3,7 @@ import {useLocation, useNavigate} from "react-router-dom";
 import type {SeatReservation} from "../../data/Reservation.ts";
 import {useSignalR} from "../../hooks/useSignalR.ts";
 import type {TrainStation} from "../../data/trainStations.ts";
-import {useState} from "react";
+import {useCookies} from "react-cookie";
 
 export interface TicketSummaryProps {
     trainStations: Array<TrainStation>;
@@ -13,17 +13,19 @@ function TicketSummaryComponent({trainStations}: TicketSummaryProps) {
     const {connection} = useSignalR();
     const location = useLocation();
     const navigate = useNavigate();
+    const [cookies, ,] = useCookies(["userEmail"]);
 
     const seatReservations: SeatReservation[] = location.state?.seatReservations;
-    const [email, setEmail] = useState<string>("");
 
     function handleCheckoutClick() {
-        if (!connection || !email) return;
+        if (!connection || !cookies?.userEmail) return;
 
         sendReservationCommand(
             connection,
-            email,
+            cookies.userEmail,
             seatReservations);
+
+        const email = cookies?.userEmail;
 
         navigate("/checkout-info", {
             state: {
@@ -57,16 +59,8 @@ function TicketSummaryComponent({trainStations}: TicketSummaryProps) {
                     </>
                 );
             })}
-            <div>
-                <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    type="email"
-                    name="email"/>
-            </div>
             <button
-                onClick={handleCheckoutClick}
-                disabled={!email}>
+                onClick={handleCheckoutClick}>
                 Checkout
             </button>
         </>

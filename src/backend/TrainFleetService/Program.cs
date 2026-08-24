@@ -18,14 +18,6 @@ builder.Services.AddHealthChecks();
 builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
 builder.Services.AddScoped<FleetService>();
 
-builder.Services.Configure<MassTransitHostOptions>(options =>
-{
-    options.WaitUntilStarted = true;
-    options.StartTimeout = TimeSpan.FromSeconds(15);
-    options.StopTimeout = TimeSpan.FromSeconds(30);
-    options.ConsumerStopTimeout = TimeSpan.FromSeconds(15);
-});
-
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<GetAvailableSeatsQueryConsumer>();
@@ -43,17 +35,13 @@ builder.Services.AddMassTransit(x =>
             h.Password(password);
         });
 
-        cfg.UseTimeout(t =>
-        {
-            t.Timeout = TimeSpan.FromSeconds(30);
-        });
-
         var queueName = QueueNames.TrainFleetQueue;
         cfg.ReceiveEndpoint(queueName, e =>
         {
             e.ConfigureConsumeTopology = true;
             e.ConfigureConsumer<GetAvailableSeatsQueryConsumer>(context);
             e.ConfigureConsumer<GetStationsQueryConsumer>(context);
+            e.UseTimeout(t => t.Timeout = TimeSpan.FromSeconds(10));
         });
     });
 });

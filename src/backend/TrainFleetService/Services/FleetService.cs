@@ -1,6 +1,7 @@
 ﻿using Contracts.Messages.Backend.Query;
 using Dapper;
 using MassTransit;
+using Microsoft.Data.SqlClient;
 using Models.Dto;
 using Models.Dtos;
 using System.Data;
@@ -10,89 +11,153 @@ namespace TrainFleetService.Service
     public class FleetService
     {
         private readonly ILogger<FleetService> _logger;
-        private readonly IDbConnection _dbConnection;
+        private readonly string _connectionString;
 
         public FleetService(
             ILogger<FleetService> logger,
-            IDbConnection dbConnection)
+            IConfiguration configuration)
         {
             _logger = logger;
-            _dbConnection = dbConnection;
+            _connectionString = configuration.GetConnectionString("MicrosoftSQLServer")
+                ?? throw new ArgumentNullException("MicrosoftSQLServer");
         }
 
-        public async Task<List<TrainStationDto>> GetStationsAsync()
+        public async Task<List<TrainStationDto>> GetStationsAsync(
+            CancellationToken cancellationToken)
         {
-            var sql = TRAIN_STATIONS_QUERY_STRING;
-            var stations = await _dbConnection.QueryAsync<TrainStationDto>(sql);
-            return stations.ToList();
-        }
-
-        public async Task<TrainCompositionDto> GetTrainCompositionAsync(GetTrainCompositionAvailableSeatsQuery query)
-        {
-            var seatsSql = SEATS_INFO_QUERY_STRING;
-            var trainSql = TRAIN_INFO_QUERY_STRING;
-            var occupiedSeatsSql = OCCUPIED_SEATS_QUERY_STRING;
-
-            var trainSeats = await _dbConnection.QueryAsync<TrainCompositionSeatInfoDto>(
-                seatsSql,
-                new { trainCompositionId = query.TrainCompositionId });
-
-            var trainInfo = await _dbConnection.QueryFirstOrDefaultAsync<TrainInfoDto>(
-                trainSql,
-                new { trainCompositionId = query.TrainCompositionId });
-
-            var occupiedSeats = await _dbConnection.QueryAsync<OccupiedSeatDto>(
-                occupiedSeatsSql,
-                new
-                {
-                    trainCompositionId = query.TrainCompositionId,
-                    departureTime = query.DepartureTime,
-                    arrivalTime = query.ArrivalTime
-                });
-
-            _logger.LogInformation($"Train composition {query.TrainCompositionId} found, {trainSeats.Count()} seats total, {occupiedSeats.Count()} seats occupied.");
-
-            if (trainInfo == null)
+            try
             {
-                throw new Exception("Train info not found");
+                await using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync(cancellationToken);
+
+                var getTrainStationsCmd = new CommandDefinition(
+                    commandText: TRAIN_STATIONS_QUERY_STRING,
+                    commandTimeout: 5,
+                    cancellationToken: cancellationToken
+                );
+
+                var trainStations = await connection.QueryAsync<TrainStationDto>(getTrainStationsCmd);
+                var result = trainStations.ToList();
+
+                _logger.LogInformation("Fetched {Count} trainStations", result.Count);
+                return result;
             }
-
-            var cars = new List<CarDto>();
-            foreach (var trainSeat in trainSeats)
+            catch (SqlException ex) when (ex.Number == -2)
             {
-                if (trainSeat == null)
-                {
-                    throw new Exception("Train seat not found");
-                }
+                _logger.LogWarning(ex, "SQL Timeout while fetching train stations");
+                throw new TimeoutException($"Database query timed out", ex);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Fetching train stations was canceled by MassTransit timeout.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error occurred while fetching train stations");
+                throw;
+            }
+        }
 
-                while (cars.Count < trainSeat.CarNumber)
-                {
-                    cars.Add(new CarDto
+        public async Task<TrainCompositionDto> GetTrainCompositionAsync(
+            GetTrainCompositionAvailableSeatsQuery query,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                await using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync(cancellationToken);
+
+                var getSeatsInfoCmd = new CommandDefinition(
+                    commandText: SEATS_INFO_QUERY_STRING,
+                    parameters: new { trainCompositionId = query.TrainCompositionId },
+                    commandTimeout: 10,
+                    cancellationToken: cancellationToken
+                );
+
+                var getTrainInfoCmd = new CommandDefinition(
+                    commandText: TRAIN_INFO_QUERY_STRING,
+                    parameters: new { trainCompositionId = query.TrainCompositionId },
+                    commandTimeout: 10,
+                    cancellationToken: cancellationToken
+                );
+
+                var getOccupiedSeatsCmd = new CommandDefinition(
+                    commandText: OCCUPIED_SEATS_QUERY_STRING,
+                    parameters: new
                     {
-                        Number = cars.Count + 1
+                        trainCompositionId = query.TrainCompositionId,
+                        departureTime = query.DepartureTime,
+                        arrivalTime = query.ArrivalTime
+                    },
+                    commandTimeout: 10,
+                    cancellationToken: cancellationToken
+                );
+
+                var trainSeats = await connection.QueryAsync<TrainCompositionSeatInfoDto>(getSeatsInfoCmd);
+                var trainInfoIEnumerable = await connection.QueryAsync<TrainInfoDto>(getTrainInfoCmd);
+                var occupiedSeats = await connection.QueryAsync<OccupiedSeatDto>(getOccupiedSeatsCmd);
+
+                _logger.LogInformation($"Train composition {query.TrainCompositionId} found, {trainSeats.Count()} seats total, {occupiedSeats.Count()} seats occupied.");
+
+                if (trainInfoIEnumerable == null && trainInfoIEnumerable.ToArray().Length > 0)
+                {
+                    throw new Exception("Train info not found");
+                }
+                var trainInfo = trainInfoIEnumerable.ToArray()[0];
+
+                var cars = new List<CarDto>();
+                foreach (var trainSeat in trainSeats)
+                {
+                    if (trainSeat == null)
+                    {
+                        throw new Exception("Train seat not found");
+                    }
+
+                    while (cars.Count < trainSeat.CarNumber)
+                    {
+                        cars.Add(new CarDto
+                        {
+                            Number = cars.Count + 1
+                        });
+                    }
+
+                    cars[trainSeat.CarNumber - 1].Seats.Add(new SeatDto
+                    {
+                        Number = trainSeat.SeatNumber,
+                        XPosition = trainSeat.SeatXPos,
+                        YPosition = trainSeat.SeatYPos,
+                        Occupied = occupiedSeats.Any(s =>
+                            s.CarNumber == trainSeat.CarNumber &&
+                            s.SeatNumber == trainSeat.SeatNumber)
                     });
                 }
 
-                cars[trainSeat.CarNumber - 1].Seats.Add(new SeatDto
+                return new TrainCompositionDto
                 {
-                    Number = trainSeat.SeatNumber,
-                    XPosition = trainSeat.SeatXPos,
-                    YPosition = trainSeat.SeatYPos,
-                    Occupied = occupiedSeats.Any(s =>
-                        s.CarNumber == trainSeat.CarNumber &&
-                        s.SeatNumber == trainSeat.SeatNumber)
-                });
+                    TrainCompositionId = query.TrainCompositionId,
+                    StartStationId = query.StartStation,
+                    EndStationId = query.EndStation,
+                    TrainType = trainInfo.TrainType,
+                    TrainNumber = trainInfo.TrainNumber,
+                    Cars = cars
+                };
             }
-
-            return new TrainCompositionDto
+            catch (SqlException ex) when (ex.Number == -2)
             {
-                TrainCompositionId = query.TrainCompositionId,
-                StartStationId = query.StartStation,
-                EndStationId = query.EndStation,
-                TrainType = trainInfo.TrainType,
-                TrainNumber = trainInfo.TrainNumber,
-                Cars = cars
-            };
+                _logger.LogWarning(ex, "SQL Timeout while fetching seats");
+                throw new TimeoutException($"Database query timed out", ex);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Fetching seats was canceled by MassTransit timeout.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error occurred while fetching seats");
+                throw;
+            }
         }
 
 
@@ -115,12 +180,18 @@ namespace TrainFleetService.Service
                     [seat_number] AS SeatNumber
                 FROM 
                     [TicketSegments]
+                JOIN
+                    [Tickets]
+                    ON
+                    [Tickets].[id]=[TicketSegments].[ticket_id]
                 WHERE 
-                    [train_composition_id] = @trainCompositionId
+                    [TicketSegments].[train_composition_id] = '79C90466-BED2-4DE3-B2A6-45BD6BB8A6AC'
                     AND
-                    [departure_time] < @arrivalTime
+                    [TicketSegments].[departure_time] < '2026-08-24 17:05:00.000'
                     AND
-                    [arrival_time] > @departureTime
+                    [TicketSegments].[arrival_time] > '2026-08-24 16:30:00.000'
+                    AND
+                    [Tickets].[status] != 'CANCELLED'
                 ORDER BY car_number, seat_number;
             ";
 

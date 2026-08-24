@@ -21,6 +21,7 @@ namespace TrainFleetService.QueueHandler
         public async Task Consume(ConsumeContext<GetAvailableSeatsQuery> context)
         {
             var message = context.Message;
+            var cancellationToken = context.CancellationToken;
             var connectionId = message.ConnectionId;
             var trainCompositionQueries = message.TrainCompositionAvailableSeatsQueries;
 
@@ -38,7 +39,7 @@ namespace TrainFleetService.QueueHandler
 
                 _logger.LogInformation($"Processing query for ConnectionId={connectionId}: TrainCompositionId={trainCompositionId}, StartStation={startStation}, EndStation={endStation}, DepartureTime={departureTime}, ArrivalTime={arrivalTime}");
 
-                var result = await _fleetService.GetTrainCompositionAsync(query);
+                var result = await _fleetService.GetTrainCompositionAsync(query, cancellationToken);
 
                 response.Add(result);
             }

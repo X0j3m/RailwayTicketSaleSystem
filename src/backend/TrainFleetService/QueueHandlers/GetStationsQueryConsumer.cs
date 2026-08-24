@@ -20,11 +20,12 @@ namespace TrainFleetService.QueueHandler
         public async Task Consume(ConsumeContext<GetStationsQuery> context)
         {
             var message = context.Message;
+            var cancellationToken = context.CancellationToken;
             var connectionId = message.ConnectionId;
 
             _logger.LogInformation($"Received query connectionId={connectionId}: {message}");
 
-            var response = await _fleetService.GetStationsAsync();
+            var response = await _fleetService.GetStationsAsync(cancellationToken);
 
             await _endpoint.Publish(new StationsQueryResponse
             {
