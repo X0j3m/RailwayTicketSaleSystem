@@ -6,17 +6,17 @@ x-common-healthcheck: &default-healthcheck
   retries: 5
 
 services:
-  # frontend:
-  #   image: frontend
-  #   container_name: frontend
-  #   hostname: frontend
-  #   restart: unless-stopped
-  #   ports:
-  #     - "3000:3000"
-  #   networks:
-  #     - app_network
-  #   depends_on:
-  #     - web_api
+  frontend:
+    image: frontend
+    container_name: frontend
+    hostname: frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - app_network
+    depends_on:
+      - web_api
 
   web_api:
     image: web_api
@@ -51,12 +51,12 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f TrainFleetService || exit 1"]
+      test: [ "CMD-SHELL", "pgrep -f TrainFleetService || exit 1" ]
       <<: *default-healthcheck
     depends_on:
       message_broker:
         condition: service_healthy
-    
+
   timetable_service:
     image: timetable_service
     container_name: timetable_service
@@ -69,7 +69,7 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f TimetableService || exit 1"]
+      test: [ "CMD-SHELL", "pgrep -f TimetableService || exit 1" ]
       <<: *default-healthcheck
     depends_on:
       message_broker:
@@ -87,7 +87,7 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f ReservationService || exit 1"]
+      test: [ "CMD-SHELL", "pgrep -f ReservationService || exit 1" ]
       <<: *default-healthcheck
     depends_on:
       message_broker:
@@ -106,7 +106,7 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity" ]
       <<: *default-healthcheck
     depends_on:
       sql_db:
@@ -131,7 +131,7 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1"]
+      test: [ "CMD", "/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1" ]
       <<: *default-healthcheck
 
   graph_db:
@@ -151,9 +151,9 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD-SHELL", "neo4j-admin server status || exit 1"]
+      test: [ "CMD-SHELL", "neo4j-admin server status || exit 1" ]
       <<: *default-healthcheck
-  
+      
   db_initializer:
     image: db_initializer
     container_name: db_initializer
